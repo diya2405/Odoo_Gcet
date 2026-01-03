@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Employee - Dayflow HRMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="fas fa-user-edit me-2"></i>Edit Employee
+                </h2>
+                <a href="{{ url_for('admin.employee_detail', employee_id=employee.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Details
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Form -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>Employee Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <!-- Personal Information Section -->
+                        <h6 class="border-bottom pb-2 mb-3">
+                            <i class="fas fa-user me-2"></i>Personal Information
+                        </h6>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" 
+                                       value="{{ employee.first_name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" 
+                                       value="{{ employee.last_name }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ employee.user.email }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="{{ employee.phone or '' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
+                                       value="{{ employee.date_of_birth.strftime('%Y-%m-%d') if employee.date_of_birth else '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="profile_picture" class="form-label">Profile Picture</label>
+                                <input type="file" class="form-control" id="profile_picture" name="profile_picture" 
+                                       accept="image/*">
+                                {% if employee.profile_picture %}
+                                    <small class="form-text text-muted">
+                                        Current: {{ employee.profile_picture }}
+                                    </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address</label>
+                            <textarea class="form-control" id="address" name="address" rows="3">{{ employee.address or '' }}</textarea>
+                        </div>
+                        
+                        <!-- Employment Information Section -->
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">
+                            <i class="fas fa-briefcase me-2"></i>Employment Information
+                        </h6>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="department" class="form-label">Department</label>
+                                <select class="form-control" id="department" name="department">
+                                    <option value="">Select Department</option>
+                                    <option value="HR" {{ 'selected' if employee.department == 'HR' else '' }}>Human Resources</option>
+                                    <option value="IT" {{ 'selected' if employee.department == 'IT' else '' }}>Information Technology</option>
+                                    <option value="Finance" {{ 'selected' if employee.department == 'Finance' else '' }}>Finance</option>
+                                    <option value="Sales" {{ 'selected' if employee.department == 'Sales' else '' }}>Sales</option>
+                                    <option value="Marketing" {{ 'selected' if employee.department == 'Marketing' else '' }}>Marketing</option>
+                                    <option value="Operations" {{ 'selected' if employee.department == 'Operations' else '' }}>Operations</option>
+                                    <option value="Engineering" {{ 'selected' if employee.department == 'Engineering' else '' }}>Engineering</option>
+                                    <option value="Customer Support" {{ 'selected' if employee.department == 'Customer Support' else '' }}>Customer Support</option>
+                                    <option value="Other" {{ 'selected' if employee.department not in ['HR', 'IT', 'Finance', 'Sales', 'Marketing', 'Operations', 'Engineering', 'Customer Support'] and employee.department else '' }}>Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="position" class="form-label">Position</label>
+                                <input type="text" class="form-control" id="position" name="position" 
+                                       value="{{ employee.position or '' }}" 
+                                       placeholder="e.g., Software Engineer, Manager">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="hire_date" class="form-label">Hire Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="hire_date" name="hire_date" 
+                                       value="{{ employee.hire_date.strftime('%Y-%m-%d') if employee.hire_date else '' }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="salary" class="form-label">Salary</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="salary" name="salary" 
+                                           value="{{ employee.salary or '' }}" 
+                                           step="0.01" min="0" placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Account Settings Section -->
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">
+                            <i class="fas fa-cog me-2"></i>Account Settings
+                        </h6>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="role" class="form-label">Role <span class="text-danger">*</span></label>
+                                <select class="form-control" id="role" name="role" required>
+                                    <option value="employee" {{ 'selected' if employee.user.role == 'employee' else '' }}>Employee</option>
+                                    <option value="admin" {{ 'selected' if employee.user.role == 'admin' else '' }}>Administrator</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="is_verified" class="form-label">Account Status</label>
+                                <select class="form-control" id="is_verified" name="is_verified">
+                                    <option value="1" {{ 'selected' if employee.user.is_verified else '' }}>Active</option>
+                                    <option value="0" {{ 'selected' if not employee.user.is_verified else '' }}>Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Password Reset Section -->
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">
+                            <i class="fas fa-key me-2"></i>Password Reset (Optional)
+                        </h6>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="new_password" class="form-label">New Password</label>
+                                <input type="password" class="form-control" id="new_password" name="new_password" 
+                                       placeholder="Leave blank to keep current password">
+                                <div class="form-text">
+                                    <small>Password must be at least 8 characters with uppercase, lowercase, and number</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
+                                       placeholder="Confirm new password">
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Buttons -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="{{ url_for('admin.employee_detail', employee_id=employee.id) }}" class="btn btn-secondary me-md-2">
+                                        <i class="fas fa-times me-1"></i>Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-1"></i>Save Changes
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Form validation
+document.getElementById('confirm_password').addEventListener('input', function() {
+    const password = document.getElementById('new_password').value;
+    const confirmPassword = this.value;
+    
+    if (password && confirmPassword && password !== confirmPassword) {
+        this.setCustomValidity('Passwords do not match');
+    } else {
+        this.setCustomValidity('');
+    }
+});
+
+// Department "Other" handling
+document.getElementById('department').addEventListener('change', function() {
+    if (this.value === 'Other') {
+        // Could add a custom input field for other departments
+        const customDept = prompt('Please specify the department:');
+        if (customDept) {
+            this.value = customDept;
+        }
+    }
+});
+
+// Form submission validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    
+    if (newPassword && newPassword !== confirmPassword) {
+        e.preventDefault();
+        alert('Passwords do not match. Please check and try again.');
+        return false;
+    }
+    
+    if (newPassword && newPassword.length < 8) {
+        e.preventDefault();
+        alert('Password must be at least 8 characters long.');
+        return false;
+    }
+    
+    return true;
+});
+</script>
+{% endblock %}

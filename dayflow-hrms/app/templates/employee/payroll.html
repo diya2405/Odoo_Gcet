@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}My Payroll - Dayflow HRMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>
+                <i class="fas fa-money-bill-wave me-2"></i>My Payroll Information
+            </h2>
+        </div>
+    </div>
+    
+    <!-- Current Salary Information -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h4 class="mb-1">{{ employee.full_name }}</h4>
+                            <p class="mb-0 opacity-75">{{ employee.position or 'Position not set' }} - {{ employee.department or 'Department not set' }}</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            {% if employee.salary %}
+                                <h3 class="mb-0">${{ "%.2f"|format(employee.salary) }}</h3>
+                                <small class="opacity-75">Base Salary</small>
+                            {% else %}
+                                <h5 class="mb-0">Salary not set</h5>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payroll History -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Payroll History
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if payroll_records %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Pay Period</th>
+                                        <th>Basic Salary</th>
+                                        <th>Allowances</th>
+                                        <th>Deductions</th>
+                                        <th>Overtime</th>
+                                        <th>Gross Pay</th>
+                                        <th>Net Pay</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for payroll in payroll_records %}
+                                        <tr>
+                                            <td>
+                                                <div class="small">
+                                                    {{ payroll.pay_period_start.strftime('%m/%d/%Y') }}<br>
+                                                    <i class="fas fa-arrow-down small text-muted"></i><br>
+                                                    {{ payroll.pay_period_end.strftime('%m/%d/%Y') }}
+                                                </div>
+                                            </td>
+                                            <td>${{ "%.2f"|format(payroll.basic_salary) }}</td>
+                                            <td>
+                                                {% if payroll.allowances > 0 %}
+                                                    <span class="text-success">${{ "%.2f"|format(payroll.allowances) }}</span>
+                                                {% else %}
+                                                    <span class="text-muted">$0.00</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if payroll.deductions > 0 %}
+                                                    <span class="text-danger">-${{ "%.2f"|format(payroll.deductions) }}</span>
+                                                {% else %}
+                                                    <span class="text-muted">$0.00</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if payroll.overtime_hours > 0 %}
+                                                    <div class="small">
+                                                        {{ "%.1f"|format(payroll.overtime_hours) }}h<br>
+                                                        @ ${{ "%.2f"|format(payroll.overtime_rate) }}
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted">None</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <strong>${{ "%.2f"|format(payroll.gross_pay) }}</strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-success fs-6">
+                                                    ${{ "%.2f"|format(payroll.net_pay) }}
+                                                </span>
+                                            </td>
+                                            <td>{{ payroll.created_at.strftime('%m/%d/%Y') }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Summary Statistics -->
+                        <div class="row mt-4">
+                            <div class="col-md-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h6>Total Records</h6>
+                                        <h4 class="text-primary">{{ payroll_records|length }}</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h6>Latest Gross Pay</h6>
+                                        <h4 class="text-info">
+                                            {% if payroll_records %}
+                                                ${{ "%.2f"|format(payroll_records[0].gross_pay) }}
+                                            {% else %}
+                                                $0.00
+                                            {% endif %}
+                                        </h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h6>Latest Net Pay</h6>
+                                        <h4 class="text-success">
+                                            {% if payroll_records %}
+                                                ${{ "%.2f"|format(payroll_records[0].net_pay) }}
+                                            {% else %}
+                                                $0.00
+                                            {% endif %}
+                                        </h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h6>YTD Earnings</h6>
+                                        <h4 class="text-warning">
+                                            ${{ "%.2f"|format(payroll_records|map(attribute='net_pay')|sum) if payroll_records else 0.00 }}
+                                        </h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-money-bill-wave fa-5x text-muted mb-4"></i>
+                            <h4>No Payroll Records</h4>
+                            <p class="text-muted">Your payroll information will appear here once processed by HR.</p>
+                            <small class="text-muted">
+                                Contact your HR department if you have questions about payroll processing.
+                            </small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payroll Information -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Payroll Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-calendar me-2"></i>Pay Schedule</h6>
+                            <p class="text-muted">Monthly payroll processing on the last working day of each month.</p>
+                            
+                            <h6><i class="fas fa-calculator me-2"></i>Calculation Method</h6>
+                            <ul class="text-muted small">
+                                <li>Gross Pay = Basic Salary + Allowances + (Overtime Hours × Overtime Rate)</li>
+                                <li>Net Pay = Gross Pay - Deductions - Tax</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-question-circle me-2"></i>Need Help?</h6>
+                            <p class="text-muted">If you have questions about your payroll, please contact:</p>
+                            <ul class="text-muted small">
+                                <li><strong>HR Department:</strong> hr@company.com</li>
+                                <li><strong>Payroll Team:</strong> payroll@company.com</li>
+                                <li><strong>Finance:</strong> finance@company.com</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Profile - Dayflow HRMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="fas fa-user-shield me-2"></i>Admin Profile
+                </h2>
+                <a href="{{ url_for('main.admin_dashboard') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Profile Picture and Basic Info -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    {% if employee.profile_picture %}
+                        <img src="{{ url_for('static', filename='uploads/' + employee.profile_picture) }}" 
+                             class="profile-picture mb-3" 
+                             alt="Profile Picture">
+                    {% else %}
+                        <div class="profile-picture mb-3 d-flex align-items-center justify-content-center bg-light">
+                            <i class="fas fa-user-shield fa-4x text-primary"></i>
+                        </div>
+                    {% endif %}
+                    
+                    <h4>{{ employee.full_name }}</h4>
+                    <p class="text-muted">{{ employee.position or 'Position not set' }}</p>
+                    <p class="text-primary">{{ employee.department or 'Department not set' }}</p>
+                    
+                    <div class="row text-center mt-3">
+                        <div class="col-6">
+                            <small class="text-muted">Employee ID</small>
+                            <div class="fw-bold">{{ employee.user.employee_id }}</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Hire Date</small>
+                            <div class="fw-bold">
+                                {% if employee.hire_date %}
+                                    {{ employee.hire_date.strftime('%m/%d/%Y') }}
+                                {% else %}
+                                    Not set
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <span class="badge bg-primary">
+                            <i class="fas fa-user-shield me-1"></i>Administrator
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Detailed Information -->
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Personal Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">First Name</label>
+                                <p class="form-control-plaintext">{{ employee.first_name }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Last Name</label>
+                                <p class="form-control-plaintext">{{ employee.last_name }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Email</label>
+                                <p class="form-control-plaintext">{{ employee.user.email }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Phone</label>
+                                <p class="form-control-plaintext">{{ employee.phone or 'Not provided' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Address</label>
+                        <p class="form-control-plaintext">{{ employee.address or 'Not provided' }}</p>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Date of Birth</label>
+                                <p class="form-control-plaintext">
+                                    {% if employee.date_of_birth %}
+                                        {{ employee.date_of_birth.strftime('%B %d, %Y') }}
+                                    {% else %}
+                                        Not provided
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Department</label>
+                                <p class="form-control-plaintext">{{ employee.department or 'Not assigned' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Job Information -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-briefcase me-2"></i>Job Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Position</label>
+                                <p class="form-control-plaintext">{{ employee.position or 'Not assigned' }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Hire Date</label>
+                                <p class="form-control-plaintext">
+                                    {% if employee.hire_date %}
+                                        {{ employee.hire_date.strftime('%B %d, %Y') }}
+                                    {% else %}
+                                        Not set
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Role</label>
+                                <p class="form-control-plaintext">
+                                    <span class="badge bg-primary">
+                                        <i class="fas fa-user-shield me-1"></i>{{ employee.user.role.title() }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        {% if employee.salary %}
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Base Salary</label>
+                                <p class="form-control-plaintext">
+                                    ${{ "%.2f"|format(employee.salary) }}
+                                </p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admin Privileges -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-key me-2"></i>Admin Privileges
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Full access to employee management
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Attendance and leave request management
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Payroll processing and management
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            System configuration and settings
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.profile-picture {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #fff;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+</style>
+{% endblock %}

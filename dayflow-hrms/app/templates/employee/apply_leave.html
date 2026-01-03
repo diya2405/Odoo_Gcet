@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Apply for Leave - Dayflow HRMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="fas fa-calendar-plus me-2"></i>Apply for Leave
+                </h2>
+                <a href="{{ url_for('employee.leave_requests') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-list me-1"></i>View All Requests
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Leave Application Form -->
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-alt me-2"></i>Leave Application Form
+                    </h5>
+                </div>
+                
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('employee.apply_leave') }}">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="leave_type" class="form-label">
+                                        <i class="fas fa-tag me-2"></i>Leave Type
+                                    </label>
+                                    <select class="form-control" id="leave_type" name="leave_type" required>
+                                        <option value="">Select Leave Type</option>
+                                        <option value="paid">Paid Leave</option>
+                                        <option value="sick">Sick Leave</option>
+                                        <option value="unpaid">Unpaid Leave</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-calculator me-2"></i>Leave Duration
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">Days</span>
+                                        <input type="text" class="form-control" id="leaveDays" readonly placeholder="Auto-calculated">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="start_date" class="form-label">
+                                        <i class="fas fa-calendar-day me-2"></i>Start Date
+                                    </label>
+                                    <input type="date" 
+                                           class="form-control future-date" 
+                                           id="start_date" 
+                                           name="start_date" 
+                                           required>
+                                    <div class="invalid-feedback">
+                                        Please select a future date
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="end_date" class="form-label">
+                                        <i class="fas fa-calendar-check me-2"></i>End Date
+                                    </label>
+                                    <input type="date" 
+                                           class="form-control future-date" 
+                                           id="end_date" 
+                                           name="end_date" 
+                                           required>
+                                    <div class="invalid-feedback">
+                                        Please select a valid end date
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">
+                                <i class="fas fa-comment-alt me-2"></i>Reason for Leave
+                            </label>
+                            <textarea class="form-control" 
+                                      id="reason" 
+                                      name="reason" 
+                                      rows="4" 
+                                      required 
+                                      placeholder="Please provide a detailed reason for your leave request..."></textarea>
+                        </div>
+                        
+                        <!-- Leave Balance Info (if available) -->
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-info-circle me-2"></i>Leave Balance Information
+                            </h6>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <strong>Paid Leave</strong><br>
+                                    <span class="badge bg-success">15 days</span>
+                                </div>
+                                <div class="col-4">
+                                    <strong>Sick Leave</strong><br>
+                                    <span class="badge bg-warning">10 days</span>
+                                </div>
+                                <div class="col-4">
+                                    <strong>Used This Year</strong><br>
+                                    <span class="badge bg-info">5 days</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('employee.leave_requests') }}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-1"></i>Submit Leave Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Calculate leave duration
+function calculateLeaveDays() {
+    var startDate = new Date(document.getElementById('start_date').value);
+    var endDate = new Date(document.getElementById('end_date').value);
+    
+    if (startDate && endDate && endDate >= startDate) {
+        var timeDiff = endDate.getTime() - startDate.getTime();
+        var daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1; // +1 to include both start and end dates
+        document.getElementById('leaveDays').value = daysDiff + ' day' + (daysDiff > 1 ? 's' : '');
+        
+        // Update end date minimum
+        document.getElementById('end_date').min = document.getElementById('start_date').value;
+    } else {
+        document.getElementById('leaveDays').value = '';
+    }
+}
+
+// Add event listeners
+document.getElementById('start_date').addEventListener('change', calculateLeaveDays);
+document.getElementById('end_date').addEventListener('change', calculateLeaveDays);
+
+// Validate dates
+document.getElementById('start_date').addEventListener('change', function() {
+    var startDate = new Date(this.value);
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (startDate <= today) {
+        this.setCustomValidity('Start date must be in the future');
+        this.classList.add('is-invalid');
+    } else {
+        this.setCustomValidity('');
+        this.classList.remove('is-invalid');
+        this.classList.add('is-valid');
+    }
+});
+
+document.getElementById('end_date').addEventListener('change', function() {
+    var endDate = new Date(this.value);
+    var startDate = new Date(document.getElementById('start_date').value);
+    
+    if (endDate < startDate) {
+        this.setCustomValidity('End date cannot be before start date');
+        this.classList.add('is-invalid');
+    } else {
+        this.setCustomValidity('');
+        this.classList.remove('is-invalid');
+        this.classList.add('is-valid');
+    }
+});
+
+// Set minimum date to tomorrow
+document.addEventListener('DOMContentLoaded', function() {
+    var tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    var minDate = tomorrow.toISOString().split('T')[0];
+    
+    document.getElementById('start_date').min = minDate;
+    document.getElementById('end_date').min = minDate;
+});
+</script>
+{% endblock %}

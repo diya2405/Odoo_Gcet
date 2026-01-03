@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Dashboard - Dayflow HRMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="bg-gradient bg-primary text-white rounded p-4 shadow">
+                <h2 class="mb-2">
+                    <i class="fas fa-sun me-2"></i>
+                    {% set hour = moment().hour if moment else 12 %}
+                    Good {{ 'morning' if (hour < 12) else ('afternoon' if hour < 17 else 'evening') }}, {{ employee.first_name }}!
+                </h2>
+                <p class="mb-0 opacity-75">Welcome back to your dashboard. Here's your daily overview.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions Row -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-user-circle fa-3x text-primary"></i>
+                    </div>
+                    <h6 class="card-title">My Profile</h6>
+                    <p class="card-text text-muted small">View and edit your profile</p>
+                    <a href="{{ url_for('employee.employee_profile') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-eye me-1"></i>View Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-clock fa-3x text-success"></i>
+                    </div>
+                    <h6 class="card-title">Attendance</h6>
+                    <p class="card-text text-muted small">Mark attendance & view history</p>
+                    <a href="{{ url_for('employee.attendance') }}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-clock me-1"></i>View Attendance
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-calendar-times fa-3x text-warning"></i>
+                    </div>
+                    <h6 class="card-title">Leave Requests</h6>
+                    <p class="card-text text-muted small">Apply for leave & track status</p>
+                    <a href="{{ url_for('employee.apply_leave') }}" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-plus me-1"></i>Apply Leave
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-money-bill-wave fa-3x text-info"></i>
+                    </div>
+                    <h6 class="card-title">Payroll</h6>
+                    <p class="card-text text-muted small">View salary & payroll details</p>
+                    <a href="{{ url_for('employee.payroll') }}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-eye me-1"></i>View Payroll
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistics Row -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-gradient-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h4 class="mb-0">{{ pending_leaves }}</h4>
+                            <p class="mb-0 opacity-75">Pending Leaves</p>
+                        </div>
+                        <div>
+                            <i class="fas fa-hourglass-half fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-gradient-success text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h4 class="mb-0">{{ approved_leaves }}</h4>
+                            <p class="mb-0 opacity-75">Approved This Month</p>
+                        </div>
+                        <div>
+                            <i class="fas fa-check-circle fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-gradient-info text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h4 class="mb-0">{{ total_hours }}</h4>
+                            <p class="mb-0 opacity-75">Hours This Month</p>
+                        </div>
+                        <div>
+                            <i class="fas fa-clock fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-gradient-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h4 class="mb-0">
+                                {% if latest_payroll %}
+                                    ${{ "%.2f"|format(latest_payroll.net_pay) }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </h4>
+                            <p class="mb-0 opacity-75">Latest Net Pay</p>
+                        </div>
+                        <div>
+                            <i class="fas fa-dollar-sign fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Today's Attendance & Recent Activity -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-day me-2"></i>Today's Attendance
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if todays_attendance %}
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="mb-2">
+                                    <i class="fas fa-sign-in-alt fa-2x text-success"></i>
+                                </div>
+                                <h6>Check In</h6>
+                                <p class="mb-0">
+                                    {% if todays_attendance.check_in_time %}
+                                        {{ todays_attendance.check_in_time.strftime('%H:%M:%S') }}
+                                    {% else %}
+                                        Not checked in
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-6">
+                                <div class="mb-2">
+                                    <i class="fas fa-sign-out-alt fa-2x text-danger"></i>
+                                </div>
+                                <h6>Check Out</h6>
+                                <p class="mb-0">
+                                    {% if todays_attendance.check_out_time %}
+                                        {{ todays_attendance.check_out_time.strftime('%H:%M:%S') }}
+                                    {% else %}
+                                        Not checked out
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        {% if todays_attendance.hours_worked %}
+                            <div class="text-center mt-3 pt-3 border-top">
+                                <h6>Hours Worked Today</h6>
+                                <h4 class="text-primary">{{ "%.2f"|format(todays_attendance.hours_worked) }} hrs</h4>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No attendance record for today</p>
+                            <a href="{{ url_for('employee.attendance') }}" class="btn btn-primary">
+                                Mark Attendance
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Recent Attendance
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_attendance %}
+                        <div class="list-group list-group-flush">
+                            {% for attendance in recent_attendance %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                                    <div>
+                                        <div class="fw-bold">{{ attendance.date.strftime('%b %d, %Y') }}</div>
+                                        <small class="text-muted">
+                                            {% if attendance.check_in_time and attendance.check_out_time %}
+                                                {{ attendance.check_in_time.strftime('%H:%M') }} - {{ attendance.check_out_time.strftime('%H:%M') }}
+                                            {% elif attendance.check_in_time %}
+                                                In: {{ attendance.check_in_time.strftime('%H:%M') }}
+                                            {% else %}
+                                                No times recorded
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-{{ 'success' if attendance.status == 'present' else ('warning' if attendance.status == 'half_day' else ('info' if attendance.status == 'leave' else 'danger')) }}">
+                                        {{ attendance.status.title().replace('_', ' ') }}
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('employee.attendance') }}" class="btn btn-outline-primary btn-sm">
+                                View All Attendance
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No attendance records found</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.bg-gradient-primary { background: linear-gradient(45deg, #007bff, #0056b3); }
+.bg-gradient-success { background: linear-gradient(45deg, #28a745, #1e7e34); }
+.bg-gradient-info { background: linear-gradient(45deg, #17a2b8, #138496); }
+.bg-gradient-warning { background: linear-gradient(45deg, #ffc107, #e0a800); }
+</style>
+{% endblock %}

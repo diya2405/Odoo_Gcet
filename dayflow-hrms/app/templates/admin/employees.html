@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Employees - Dayflow HRMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="fas fa-users me-2"></i>Manage Employees
+                </h2>
+                <a href="{{ url_for('auth.signup') }}" class="btn btn-primary">
+                    <i class="fas fa-user-plus me-1"></i>Add New Employee
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Search and Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('admin.employees') }}">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           name="search" 
+                                           value="{{ search }}" 
+                                           placeholder="Search by name, ID, or email...">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-control" name="department">
+                                    <option value="">All Departments</option>
+                                    {% for dept in departments %}
+                                        <option value="{{ dept }}" {{ 'selected' if dept == current_department else '' }}>
+                                            {{ dept }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-outline-primary w-100">Filter</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Employee List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    {% if employees.items %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Employee ID</th>
+                                        <th>Department</th>
+                                        <th>Position</th>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for employee in employees.items %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    {% if employee.profile_picture %}
+                                                        <img src="{{ url_for('static', filename='uploads/' + employee.profile_picture) }}" 
+                                                             class="rounded-circle me-2" 
+                                                             width="40" height="40" 
+                                                             alt="Profile">
+                                                    {% else %}
+                                                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2" 
+                                                             style="width: 40px; height: 40px;">
+                                                            <i class="fas fa-user text-white"></i>
+                                                        </div>
+                                                    {% endif %}
+                                                    <div>
+                                                        <div class="fw-bold">{{ employee.full_name }}</div>
+                                                        <small class="text-muted">
+                                                            Joined: {{ employee.hire_date.strftime('%m/%d/%Y') if employee.hire_date else 'N/A' }}
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">{{ employee.user.employee_id }}</span>
+                                            </td>
+                                            <td>{{ employee.department or 'Not assigned' }}</td>
+                                            <td>{{ employee.position or 'Not assigned' }}</td>
+                                            <td>{{ employee.user.email }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ 'success' if employee.user.is_verified else 'warning' }}">
+                                                    {{ 'Active' if employee.user.is_verified else 'Pending' }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="{{ url_for('admin.employee_detail', employee_id=employee.id) }}" 
+                                                       class="btn btn-outline-primary" 
+                                                       title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="{{ url_for('admin.edit_employee', employee_id=employee.id) }}" 
+                                                       class="btn btn-outline-success" 
+                                                       title="Edit">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if employees.pages > 1 %}
+                        <nav aria-label="Employee pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if employees.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin.employees', page=employees.prev_num, search=search, department=current_department) }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for page_num in employees.iter_pages() %}
+                                    {% if page_num %}
+                                        {% if page_num != employees.page %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('admin.employees', page=page_num, search=search, department=current_department) }}">{{ page_num }}</a>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ page_num }}</span>
+                                            </li>
+                                        {% endif %}
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if employees.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin.employees', page=employees.next_num, search=search, department=current_department) }}">Next</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-users fa-5x text-muted mb-4"></i>
+                            <h4>No Employees Found</h4>
+                            <p class="text-muted">
+                                {% if search or current_department %}
+                                    No employees match your search criteria.
+                                {% else %}
+                                    No employees have been added to the system yet.
+                                {% endif %}
+                            </p>
+                            <a href="{{ url_for('auth.signup') }}" class="btn btn-primary">
+                                <i class="fas fa-user-plus me-1"></i>Add First Employee
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Summary Statistics -->
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-2x mb-2"></i>
+                    <h4>{{ employees.total if employees else 0 }}</h4>
+                    <p class="mb-0">Total Employees</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-check fa-2x mb-2"></i>
+                    <h4>{{ departments|length }}</h4>
+                    <p class="mb-0">Departments</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-day fa-2x mb-2"></i>
+                    <h4>{{ (employees.items|selectattr('hire_date')|list|length) if employees and employees.items else 0 }}</h4>
+                    <p class="mb-0">New This Month</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-shield fa-2x mb-2"></i>
+                    <h4>{{ employees.items|selectattr('user.role', 'equalto', 'admin')|list|length if employees else 0 }}</h4>
+                    <p class="mb-0">Admin Users</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

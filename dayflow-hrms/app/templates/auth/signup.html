@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - Dayflow HRMS{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+            <div class="card shadow-lg border-0 mt-4">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Join Dayflow HRMS
+                    </h3>
+                    <p class="mb-0 mt-2 opacity-75">Create your account to get started</p>
+                </div>
+                
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('auth.signup') }}">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="employee_id" class="form-label">
+                                        <i class="fas fa-id-badge me-2"></i>Employee ID
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="employee_id" 
+                                           name="employee_id" 
+                                           required 
+                                           placeholder="e.g., EMP001">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">
+                                        <i class="fas fa-envelope me-2"></i>Email Address
+                                    </label>
+                                    <input type="email" 
+                                           class="form-control" 
+                                           id="email" 
+                                           name="email" 
+                                           required 
+                                           placeholder="your.email@company.com">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="first_name" class="form-label">
+                                        <i class="fas fa-user me-2"></i>First Name
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="first_name" 
+                                           name="first_name" 
+                                           required 
+                                           placeholder="John">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="last_name" class="form-label">
+                                        <i class="fas fa-user me-2"></i>Last Name
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="last_name" 
+                                           name="last_name" 
+                                           required 
+                                           placeholder="Doe">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="department" class="form-label">
+                                        <i class="fas fa-building me-2"></i>Department
+                                    </label>
+                                    <select class="form-control" id="department" name="department" required>
+                                        <option value="">Select Department</option>
+                                        <option value="Human Resources">Human Resources</option>
+                                        <option value="Information Technology">Information Technology</option>
+                                        <option value="Finance">Finance</option>
+                                        <option value="Marketing">Marketing</option>
+                                        <option value="Sales">Sales</option>
+                                        <option value="Operations">Operations</option>
+                                        <option value="Engineering">Engineering</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="position" class="form-label">
+                                        <i class="fas fa-briefcase me-2"></i>Position
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="position" 
+                                           name="position" 
+                                           placeholder="e.g., Software Engineer">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="role" class="form-label">
+                                <i class="fas fa-user-shield me-2"></i>Role
+                            </label>
+                            <select class="form-control" id="role" name="role" required>
+                                <option value="employee">Employee</option>
+                                <option value="admin">Admin/HR</option>
+                            </select>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">
+                                        <i class="fas fa-lock me-2"></i>Password
+                                    </label>
+                                    <input type="password" 
+                                           class="form-control" 
+                                           id="password" 
+                                           name="password" 
+                                           required 
+                                           placeholder="Minimum 8 characters">
+                                    <div class="form-text">
+                                        Password must contain uppercase, lowercase, number
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="form-label">
+                                        <i class="fas fa-lock me-2"></i>Confirm Password
+                                    </label>
+                                    <input type="password" 
+                                           class="form-control" 
+                                           id="confirm_password" 
+                                           name="confirm_password" 
+                                           required 
+                                           placeholder="Re-enter password">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid mb-3">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-user-plus me-2"></i>Create Account
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-footer text-center bg-light">
+                    <p class="mb-0">
+                        Already have an account? 
+                        <a href="{{ url_for('auth.login') }}" class="text-primary text-decoration-none">
+                            <strong>Sign In</strong>
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

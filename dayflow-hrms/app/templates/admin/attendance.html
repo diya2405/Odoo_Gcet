@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Employee Overview{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Employee Overview</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="department_filter" class="form-label">Department</label>
+                    <select class="form-select" id="department_filter" name="department">
+                        <option value="">All Departments</option>
+                        <option value="HR">Human Resources</option>
+                        <option value="IT">Information Technology</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Marketing">Marketing</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="status_filter" class="form-label">Status</label>
+                    <select class="form-select" id="status_filter" name="status">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="search_filter" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search_filter" name="search" 
+                           placeholder="Search by name or ID">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">Filter</button>
+                    <a href="{{ url_for('admin.attendance') }}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Total Employees</h5>
+                    <h3>{{ stats.total or 0 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Present Today</h5>
+                    <h3>{{ stats.present or 0 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">Absent Today</h5>
+                    <h3>{{ stats.absent or 0 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">On Leave</h5>
+                    <h3>{{ stats.leave or 0 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Employee List</h5>
+        </div>
+        <div class="card-body">
+            {% if employees %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Employee</th>
+                                <th>Department</th>
+                                <th>Position</th>
+                                <th>Status</th>
+                                <th>Contact</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for employee, attendance in employees %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div>
+                                            <strong>{{ employee.full_name }}</strong><br>
+                                            <small class="text-muted">{{ employee.user.employee_id if employee.user else 'N/A' }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ employee.department or 'N/A' }}</td>
+                                <td>{{ employee.position or 'N/A' }}</td>
+                                <td>
+                                    {% if attendance %}
+                                        {% if attendance.status == 'present' %}
+                                            <span class="badge bg-success">Present</span>
+                                        {% elif attendance.status == 'absent' %}
+                                            <span class="badge bg-danger">Absent</span>
+                                        {% elif attendance.status == 'leave' %}
+                                            <span class="badge bg-info">On Leave</span>
+                                        {% elif attendance.status == 'half_day' %}
+                                            <span class="badge bg-warning">Half Day</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ attendance.status.title() if attendance.status else 'Unknown' }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">Not Marked</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ employee.user.email if employee.user else 'N/A' }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('admin.employee_detail', employee_id=employee.id) }}" class="btn btn-sm btn-outline-primary">
+                                            View Details
+                                        </a>
+                                        <a href="{{ url_for('admin.edit_employee', employee_id=employee.id) }}" class="btn btn-sm btn-outline-secondary">
+                                            Edit
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No employees found</h5>
+                    <p class="text-muted">Try adjusting your filters or add new employees.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- This page shows employee list for attendance overview -->
+{% endblock %}

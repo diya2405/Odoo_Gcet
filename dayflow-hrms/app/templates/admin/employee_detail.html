@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Details - Dayflow HRMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="fas fa-user me-2"></i>Employee Details
+                </h2>
+                <div class="btn-group">
+                    <a href="{{ url_for('admin.employees') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Employees
+                    </a>
+                    <a href="{{ url_for('admin.edit_employee', employee_id=employee.id) }}" class="btn btn-primary">
+                        <i class="fas fa-edit me-1"></i>Edit Employee
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Employee Information Cards -->
+    <div class="row">
+        <!-- Personal Information -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user me-2"></i>Personal Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12 text-center mb-3">
+                            {% if employee.profile_picture %}
+                                <img src="{{ url_for('static', filename='uploads/' + employee.profile_picture) }}" 
+                                     alt="{{ employee.full_name }}" 
+                                     class="rounded-circle" 
+                                     width="120" 
+                                     height="120">
+                            {% else %}
+                                <div class="bg-secondary rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
+                                    <i class="fas fa-user fa-3x text-white"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Employee ID:</strong></td>
+                            <td>{{ employee.user.employee_id if employee.user else 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Full Name:</strong></td>
+                            <td>{{ employee.full_name }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Email:</strong></td>
+                            <td>{{ employee.user.email if employee.user else 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Phone:</strong></td>
+                            <td>{{ employee.phone or 'Not provided' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Date of Birth:</strong></td>
+                            <td>
+                                {% if employee.date_of_birth %}
+                                    {{ employee.date_of_birth.strftime('%B %d, %Y') }}
+                                {% else %}
+                                    Not provided
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Address:</strong></td>
+                            <td>{{ employee.address or 'Not provided' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Employment Information -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-briefcase me-2"></i>Employment Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Department:</strong></td>
+                            <td>{{ employee.department or 'Not assigned' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Position:</strong></td>
+                            <td>{{ employee.position or 'Not assigned' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Hire Date:</strong></td>
+                            <td>{{ employee.hire_date.strftime('%B %d, %Y') if employee.hire_date else 'Not set' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Salary:</strong></td>
+                            <td>
+                                {% if employee.salary %}
+                                    ${{ "{:,.2f}"|format(employee.salary|float) }}
+                                {% else %}
+                                    Not set
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Account Status:</strong></td>
+                            <td>
+                                {% if employee.user and employee.user.is_verified %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Pending Verification</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Role:</strong></td>
+                            <td>
+                                {% if employee.user %}
+                                    <span class="badge bg-{{ 'danger' if employee.user.role == 'admin' else 'primary' }}">
+                                        {{ employee.user.role.title() }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No Account</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Member Since:</strong></td>
+                            <td>{{ employee.user.created_at.strftime('%B %d, %Y') if employee.user else 'N/A' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Additional Information -->
+    <div class="row">
+        <!-- Recent Attendance -->
+        <div class="col-md-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>Recent Attendance
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <style>
+                        .attendance-calendar {
+                            display: grid;
+                            grid-template-columns: repeat(7, 1fr);
+                            gap: 10px;
+                            max-width: 800px;
+                            margin: 0 auto;
+                        }
+                        .calendar-day {
+                            aspect-ratio: 1;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            border-radius: 8px;
+                            padding: 10px;
+                            transition: all 0.3s ease;
+                            cursor: pointer;
+                            position: relative;
+                        }
+                        .calendar-day:hover {
+                            transform: translateY(-2px);
+                            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                        }
+                        .day-present {
+                            background-color: #28a745;
+                            color: white;
+                            border: 2px solid #1e7e34;
+                        }
+                        .day-absent {
+                            background-color: #dc3545;
+                            color: white;
+                            border: 2px solid #bd2130;
+                        }
+                        .day-future {
+                            background-color: #e9ecef;
+                            color: #6c757d;
+                            border: 2px solid #dee2e6;
+                        }
+                        .day-date {
+                            font-size: 0.85em;
+                            font-weight: bold;
+                            margin-bottom: 4px;
+                        }
+                        .day-label {
+                            font-size: 0.75em;
+                            opacity: 0.9;
+                        }
+                        .day-time {
+                            font-size: 0.7em;
+                            margin-top: 4px;
+                            opacity: 0.9;
+                        }
+                        .legend {
+                            display: flex;
+                            justify-content: center;
+                            gap: 30px;
+                            margin-top: 20px;
+                            padding-top: 15px;
+                            border-top: 1px solid #dee2e6;
+                        }
+                        .legend-item {
+                            display: flex;
+                            align-items: center;
+                            gap: 8px;
+                        }
+                        .legend-box {
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 4px;
+                            border: 2px solid;
+                        }
+                    </style>
+                    
+                    {% if recent_attendance %}
+                        <div class="attendance-calendar">
+                            {% for attendance in recent_attendance %}
+                                <div class="calendar-day 
+                                    {% if attendance.check_in_time %}day-present
+                                    {% else %}day-absent{% endif %}"
+                                    title="{{ attendance.date.strftime('%B %d, %Y') }}{% if attendance.check_in_time %} - Present ({{ attendance.check_in_time.strftime('%I:%M %p') }}{% if attendance.check_out_time %} - {{ attendance.check_out_time.strftime('%I:%M %p') }}{% endif %}){% else %} - Absent{% endif %}">
+                                    
+                                    <div class="day-date">{{ attendance.date.strftime('%b %d') }}</div>
+                                    <div class="day-label">{{ attendance.date.strftime('%a') }}</div>
+                                    {% if attendance.check_in_time %}
+                                        <div class="day-time">
+                                            {% if attendance.hours_worked %}
+                                                {{ "%.1f"|format(attendance.hours_worked) }}h
+                                            {% else %}
+                                                In Progress
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="legend">
+                            <div class="legend-item">
+                                <div class="legend-box day-present"></div>
+                                <span>Present</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-box day-absent"></div>
+                                <span>Absent</span>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">No recent attendance records</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tools me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2 d-md-block">
+                        <a href="{{ url_for('admin.edit_employee', employee_id=employee.id) }}" class="btn btn-primary">
+                            <i class="fas fa-edit me-1"></i>Edit Employee
+                        </a>
+                        <button type="button" class="btn btn-info" onclick="viewAttendance({{ employee_id }})">
+                            <i class="fas fa-clock me-1"></i>View Full Attendance
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="viewLeaveHistory({{ employee_id }})">
+                            <i class="fas fa-calendar-times me-1"></i>Leave History
+                        </button>
+                        <button type="button" class="btn btn-success" onclick="viewPayroll({{ employee_id }})">
+                            <i class="fas fa-money-bill-wave me-1"></i>Payroll Records
+                        </button>
+                        {% if employee.user and employee.user.is_verified %}
+                            <button type="button" class="btn btn-warning" onclick="deactivateEmployee({{ employee_id }})">
+                                <i class="fas fa-user-times me-1"></i>Deactivate
+                            </button>
+                        {% else %}
+                            <button type="button" class="btn btn-success" onclick="activateEmployee({ employee_id })">
+                                <i class="fas fa-user-check me-1"></i>Activate
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function viewAttendance(employeeId) {
+    // Redirect to attendance management page for this employee
+    window.location.href = '{{ url_for("admin.attendance") }}?employee_id=' + employeeId;
+}
+
+function viewLeaveHistory(employeeId) {
+    // Redirect to leave management page for this employee
+    window.location.href = '{{ url_for("admin.leave_requests") }}?employee_id=' + employeeId;
+}
+
+function viewPayroll(employeeId) {
+    // Redirect to payroll page for this employee
+    window.location.href = '{{ url_for("admin.payroll") }}?employee_id=' + employeeId;
+}
+
+function activateEmployee(employeeId) {
+    if (confirm('Are you sure you want to activate this employee account?')) {
+        // Implementation for activating employee
+        alert('Employee activation feature will be implemented');
+    }
+}
+
+function deactivateEmployee(employeeId) {
+    if (confirm('Are you sure you want to deactivate this employee account? They will not be able to login.')) {
+        // Implementation for deactivating employee
+        alert('Employee deactivation feature will be implemented');
+    }
+}
+</script>
+{% endblock %}

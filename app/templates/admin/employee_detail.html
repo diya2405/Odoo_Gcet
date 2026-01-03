@@ -1,0 +1,265 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Employee Details</h2>
+        <div>
+            <a href="{{ url_for('admin.employees') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Employees
+            </a>
+            <a href="{{ url_for('admin.edit_employee', employee_id=employee.id) }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Edit Employee
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Personal Information -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user"></i> Personal Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-sm-4"><strong>Employee ID:</strong></div>
+                        <div class="col-sm-8">{{ employee.user.employee_id if employee.user else 'N/A' }}</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>Full Name:</strong></div>
+                        <div class="col-sm-8">{{ employee.full_name }}</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>Email:</strong></div>
+                        <div class="col-sm-8">{{ employee.user.email if employee.user else 'N/A' }}</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>Phone:</strong></div>
+                        <div class="col-sm-8">{{ employee.phone or 'N/A' }}</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>Date of Birth:</strong></div>
+                        <div class="col-sm-8">{{ employee.date_of_birth.strftime('%Y-%m-%d') if employee.date_of_birth else 'N/A' }}</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>Address:</strong></div>
+                        <div class="col-sm-8">{{ employee.address or 'N/A' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Work Information -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-briefcase"></i> Work Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-sm-4"><strong>Department:</strong></div>
+                        <div class="col-sm-8">{{ employee.department or 'N/A' }}</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>Position:</strong></div>
+                        <div class="col-sm-8">{{ employee.position or 'N/A' }}</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>Hire Date:</strong></div>
+                        <div class="col-sm-8">{{ employee.hire_date.strftime('%Y-%m-%d') if employee.hire_date else 'N/A' }}</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>Salary:</strong></div>
+                        <div class="col-sm-8">${{ "{:.2f}".format(employee.salary) if employee.salary else '0.00' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Status -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user-check"></i> Account Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-sm-2"><strong>Account Status:</strong></div>
+                        <div class="col-sm-4">
+                            {% if employee.user and employee.user.is_verified %}
+                                <span class="badge bg-success">Verified</span>
+                            {% else %}
+                                <span class="badge bg-warning">Pending Verification</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-sm-2"><strong>Role:</strong></div>
+                        <div class="col-sm-4">
+                            <span class="badge bg-info">{{ employee.user.role if employee.user else 'N/A' }}</span>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-2"><strong>Account Created:</strong></div>
+                        <div class="col-sm-4">{{ employee.user.created_at.strftime('%Y-%m-%d %H:%M') if employee.user and employee.user.created_at else 'N/A' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Attendance -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-clock"></i> Recent Attendance (Last 10 records)</h5>
+                    <button onclick="viewAttendance()" class="btn btn-sm btn-outline-primary">View All</button>
+                </div>
+                <div class="card-body">
+                    {% if recent_attendance %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Check In</th>
+                                        <th>Check Out</th>
+                                        <th>Total Hours</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for attendance in recent_attendance %}
+                                    <tr>
+                                        <td>{{ attendance.date.strftime('%Y-%m-%d') }}</td>
+                                        <td>{{ attendance.check_in_time.strftime('%H:%M') if attendance.check_in_time else 'N/A' }}</td>
+                                        <td>{{ attendance.check_out_time.strftime('%H:%M') if attendance.check_out_time else 'N/A' }}</td>
+                                        <td>{{ "{:.2f}".format(attendance.total_hours) if attendance.total_hours else '0.00' }}</td>
+                                        <td>
+                                            {% if attendance.status == 'present' %}
+                                                <span class="badge bg-success">Present</span>
+                                            {% elif attendance.status == 'absent' %}
+                                                <span class="badge bg-danger">Absent</span>
+                                            {% elif attendance.status == 'late' %}
+                                                <span class="badge bg-warning">Late</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ attendance.status or 'Unknown' }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No attendance records found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leave Requests -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> Recent Leave Requests</h5>
+                    <button onclick="viewLeaveRequests()" class="btn btn-sm btn-outline-primary">View All</button>
+                </div>
+                <div class="card-body">
+                    {% if leave_requests %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Days</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for leave in leave_requests %}
+                                    <tr>
+                                        <td>{{ leave.start_date.strftime('%Y-%m-%d') }}</td>
+                                        <td>{{ leave.end_date.strftime('%Y-%m-%d') }}</td>
+                                        <td>{{ leave.days }}</td>
+                                        <td>{{ leave.leave_type }}</td>
+                                        <td>
+                                            {% if leave.status == 'approved' %}
+                                                <span class="badge bg-success">Approved</span>
+                                            {% elif leave.status == 'rejected' %}
+                                                <span class="badge bg-danger">Rejected</span>
+                                            {% elif leave.status == 'pending' %}
+                                                <span class="badge bg-warning">Pending</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ leave.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ leave.reason[:50] + '...' if leave.reason and leave.reason|length > 50 else (leave.reason or 'N/A') }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No leave requests found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-cogs"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body text-center">
+                    <button onclick="viewAttendance()" class="btn btn-primary me-2">
+                        <i class="fas fa-clock"></i> View Attendance
+                    </button>
+                    <button onclick="viewLeaveRequests()" class="btn btn-info me-2">
+                        <i class="fas fa-calendar-alt"></i> View Leave Requests
+                    </button>
+                    {% if employee.user and employee.user.is_verified %}
+                        <button onclick="viewPayroll()" class="btn btn-success me-2">
+                            <i class="fas fa-money-bill"></i> View Payroll
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewAttendance() {
+    window.location.href = '/admin/attendance?employee_id={{ employee.id }}';
+}
+
+function viewLeaveRequests() {
+    window.location.href = '/admin/leave-requests?employee_id={{ employee.id }}';
+}
+
+function viewPayroll() {
+    window.location.href = '/admin/payroll?employee_id={{ employee.id }}';
+}
+</script>
+{% endblock %}

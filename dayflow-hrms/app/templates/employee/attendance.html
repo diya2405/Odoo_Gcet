@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance - Dayflow HRMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="fas fa-clock me-2"></i>My Attendance
+                </h2>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-success" id="checkInBtn" onclick="checkIn()">
+                        <i class="fas fa-sign-in-alt me-1"></i>Check In
+                    </button>
+                    <button type="button" class="btn btn-danger" id="checkOutBtn" onclick="checkOut()">
+                        <i class="fas fa-sign-out-alt me-1"></i>Check Out
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Today's Status -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-day me-2"></i>
+                        Today's Status - {{ moment().strftime('%B %d, %Y') if moment is defined else 'Current Date' }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if todays_attendance %}
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <i class="fas fa-sign-in-alt fa-2x text-success"></i>
+                                    <h6 class="mt-2">Check In</h6>
+                                    <p class="mb-0" id="checkInTime">
+                                        {% if todays_attendance.check_in_time %}
+                                            {{ todays_attendance.check_in_time.strftime('%I:%M:%S %p') }}
+                                        {% else %}
+                                            Not checked in
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <i class="fas fa-sign-out-alt fa-2x text-danger"></i>
+                                    <h6 class="mt-2">Check Out</h6>
+                                    <p class="mb-0" id="checkOutTime">
+                                        {% if todays_attendance.check_out_time %}
+                                            {{ todays_attendance.check_out_time.strftime('%I:%M:%S %p') }}
+                                        {% else %}
+                                            Not checked out
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <i class="fas fa-clock fa-2x text-info"></i>
+                                    <h6 class="mt-2">Hours Worked</h6>
+                                    <p class="mb-0" id="hoursWorked">
+                                        {% if todays_attendance.hours_worked %}
+                                            {{ "%.2f"|format(todays_attendance.hours_worked) }} hours
+                                        {% else %}
+                                            0.00 hours
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <i class="fas fa-info-circle fa-2x text-primary"></i>
+                                    <h6 class="mt-2">Status</h6>
+                                    <span class="badge bg-{{ 'success' if todays_attendance.status == 'present' else ('warning' if todays_attendance.status == 'half_day' else ('info' if todays_attendance.status == 'leave' else 'danger')) }} fs-6">
+                                        {{ todays_attendance.status.title().replace('_', ' ') }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <h5>No attendance record for today</h5>
+                            <p class="text-muted">Click 'Check In' to start your day</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Monthly Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-2x mb-2"></i>
+                    <h4>{{ stats.present }}</h4>
+                    <p class="mb-0">Present Days</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body text-center">
+                    <i class="fas fa-times-circle fa-2x mb-2"></i>
+                    <h4>{{ stats.absent }}</h4>
+                    <p class="mb-0">Absent Days</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body text-center">
+                    <i class="fas fa-clock fa-2x mb-2"></i>
+                    <h4>{{ stats.half_days }}</h4>
+                    <p class="mb-0">Half Days</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body text-center">
+                    <i class="fas fa-hourglass fa-2x mb-2"></i>
+                    <h4>{{ stats.total_hours }}</h4>
+                    <p class="mb-0">Total Hours</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attendance History -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Attendance History
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if attendance_records %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Check In</th>
+                                        <th>Check Out</th>
+                                        <th>Hours</th>
+                                        <th>Status</th>
+                                        <th>Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for attendance in attendance_records %}
+                                        <tr>
+                                            <td>{{ attendance.date.strftime('%b %d, %Y') }}</td>
+                                            <td>
+                                                {% if attendance.check_in_time %}
+                                                    {{ attendance.check_in_time.strftime('%I:%M %p') }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if attendance.check_out_time %}
+                                                    {{ attendance.check_out_time.strftime('%I:%M %p') }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if attendance.hours_worked %}
+                                                    {{ "%.2f"|format(attendance.hours_worked) }}
+                                                {% else %}
+                                                    <span class="text-muted">0.00</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{{ 'success' if attendance.status == 'present' else ('warning' if attendance.status == 'half_day' else ('info' if attendance.status == 'leave' else 'danger')) }}">
+                                                    {{ attendance.status.title().replace('_', ' ') }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if attendance.remarks %}
+                                                    {{ attendance.remarks }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <h5>No attendance records found</h5>
+                            <p class="text-muted">Start marking your attendance to see records here</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function checkIn() {
+    fetch('{{ url_for("employee.check_in") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Checked in successfully at ' + data.time);
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error during check-in');
+    });
+}
+
+function checkOut() {
+    fetch('{{ url_for("employee.check_out") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Checked out successfully at ' + data.time + '. Hours worked: ' + data.hours_worked);
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error during check-out');
+    });
+}
+
+// Update button states based on today's attendance
+document.addEventListener('DOMContentLoaded', function() {
+    {% if todays_attendance %}
+        {% if todays_attendance.check_in_time %}
+            document.getElementById('checkInBtn').disabled = true;
+        {% endif %}
+        {% if todays_attendance.check_out_time %}
+            document.getElementById('checkOutBtn').disabled = true;
+        {% endif %}
+        {% if not todays_attendance.check_in_time %}
+            document.getElementById('checkOutBtn').disabled = true;
+        {% endif %}
+    {% else %}
+        document.getElementById('checkOutBtn').disabled = true;
+    {% endif %}
+});
+</script>
+{% endblock %}

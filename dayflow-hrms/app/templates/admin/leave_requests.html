@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Leave Requests{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Leave Requests Management</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="status_filter" class="form-label">Status</label>
+                    <select class="form-select" id="status_filter" name="status">
+                        <option value="">All Status</option>
+                        <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="approved" {% if selected_status == 'approved' %}selected{% endif %}>Approved</option>
+                        <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="employee_filter" class="form-label">Employee</label>
+                    <select class="form-select" id="employee_filter" name="employee_id">
+                        <option value="">All Employees</option>
+                        {% for employee in employees %}
+                            <option value="{{ employee.id }}" 
+                                {% if employee.id == selected_employee_id %}selected{% endif %}>
+                                {{ employee.first_name }} {{ employee.last_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="leave_type_filter" class="form-label">Leave Type</label>
+                    <select class="form-select" id="leave_type_filter" name="leave_type">
+                        <option value="">All Types</option>
+                        <option value="sick" {% if selected_leave_type == 'sick' %}selected{% endif %}>Sick Leave</option>
+                        <option value="vacation" {% if selected_leave_type == 'vacation' %}selected{% endif %}>Vacation</option>
+                        <option value="personal" {% if selected_leave_type == 'personal' %}selected{% endif %}>Personal Leave</option>
+                        <option value="emergency" {% if selected_leave_type == 'emergency' %}selected{% endif %}>Emergency</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">Filter</button>
+                    <a href="{{ url_for('admin.leave_requests') }}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">Pending</h5>
+                    <h3>{{ pending_count or 0 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Approved</h5>
+                    <h3>{{ approved_count or 0 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-bg-danger">
+                <div class="card-body">
+                    <h5 class="card-title">Rejected</h5>
+                    <h3>{{ rejected_count or 0 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">Total Requests</h5>
+                    <h3>{{ leave_requests.total}}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leave Requests Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Leave Requests</h5>
+        </div>
+        <div class="card-body">
+            {% if leave_requests.items %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Employee</th>
+                                <th>Leave Type</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Days</th>
+                                <th>Status</th>
+                                <th>Applied On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for leave_request in leave_requests.items %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div>
+                                            <strong>{{ leave_request.employee.first_name }} {{ leave_request.employee.last_name }}</strong><br>
+                                            <small class="text-muted">{{ leave_request.employee.department or 'N/A' }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ leave_request.leave_type|title }}
+                                    </span>
+                                </td>
+                                <td>{{ leave_request.start_date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ leave_request.end_date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ leave_request.days_requested }} days</td>
+                                <td>
+                                    {% if leave_request.status == 'pending' %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% elif leave_request.status == 'approved' %}
+                                        <span class="badge bg-success">Approved</span>
+                                    {% elif leave_request.status == 'rejected' %}
+                                        <span class="badge bg-danger">Rejected</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ leave_request.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                data-bs-toggle="modal" data-bs-target="#viewRequestModal"
+                                                onclick="viewRequest({{ leave_request.id }})">
+                                            View
+                                        </button>
+                                        {% if leave_request.status == 'pending' %}
+                                            <button type="button" class="btn btn-sm btn-success"
+                                                    onclick="updateStatus({{ leave_request.id }}, 'approved')">
+                                                Approve
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-danger"
+                                                    onclick="updateStatus({{ leave_request.id }}, 'rejected')">
+                                                Reject
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination Controls -->
+                {% if leave_requests.pages > 1 %}
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                        <small class="text-muted">
+                            Showing {{ (leave_requests.page - 1) * leave_requests.per_page + 1 }} to 
+                            {{ leave_requests.page * leave_requests.per_page if leave_requests.page * leave_requests.per_page <= leave_requests.total else leave_requests.total }} 
+                            of {{ leave_requests.total }} entries
+                        </small>
+                    </div>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if leave_requests.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin.leave_requests', page=leave_requests.prev_num, status=current_status) }}">Previous</a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for page_num in leave_requests.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != leave_requests.page %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('admin.leave_requests', page=page_num, status=current_status) }}">{{ page_num }}</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">…</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if leave_requests.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin.leave_requests', page=leave_requests.next_num, status=current_status) }}">Next</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No leave requests found</h5>
+                    <p class="text-muted">No leave requests match your current filters.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- View Request Modal -->
+<div class="modal fade" id="viewRequestModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Leave Request Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="requestDetails">
+                <!-- Request details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <div id="actionButtons">
+                    <!-- Action buttons will be added here if status is pending -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewRequest(requestId) {
+    // This would typically make an AJAX call to get request details
+    document.getElementById('requestDetails').innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+    
+    fetch(`/admin/leave_request/${requestId}`)
+        .then(response => response.json())
+        .then(data => {
+            let html = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Employee Information</h6>
+                        <p><strong>Name:</strong> ${data.employee_name}</p>
+                        <p><strong>Department:</strong> ${data.department || 'N/A'}</p>
+                        <p><strong>Employee ID:</strong> ${data.employee_id}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Leave Information</h6>
+                        <p><strong>Leave Type:</strong> ${data.leave_type}</p>
+                        <p><strong>Start Date:</strong> ${data.start_date}</p>
+                        <p><strong>End Date:</strong> ${data.end_date}</p>
+                        <p><strong>Days Requested:</strong> ${data.days_requested}</p>
+                        <p><strong>Status:</strong> <span class="badge bg-${data.status == 'pending' ? 'warning' : data.status == 'approved' ? 'success' : 'danger'}">${data.status}</span></p>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Reason</h6>
+                        <p>${data.reason || 'No reason provided'}</p>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('requestDetails').innerHTML = html;
+            
+            // Add action buttons if pending
+            const actionButtons = document.getElementById('actionButtons');
+            if (data.status === 'pending') {
+                actionButtons.innerHTML = `
+                    <button type="button" class="btn btn-success" onclick="updateStatus(${requestId}, 'approved')">Approve</button>
+                    <button type="button" class="btn btn-danger" onclick="updateStatus(${requestId}, 'rejected')">Reject</button>
+                `;
+            } else {
+                actionButtons.innerHTML = '';
+            }
+        })
+        .catch(error => {
+            document.getElementById('requestDetails').innerHTML = '<div class="alert alert-danger">Error loading request details</div>';
+        });
+}
+
+function updateStatus(requestId, newStatus) {
+    if (confirm(`Are you sure you want to ${newStatus} this leave request?`)) {
+        fetch('/admin/update_leave_status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                request_id: requestId,
+                status: newStatus
+            })
+        }).then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert(`Error ${newStatus}ing leave request`);
+            }
+        });
+    }
+}
+</script>
+{% endblock %}
