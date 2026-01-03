@@ -21,7 +21,6 @@ def validate_password(password):
 @auth_bp.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        employee_id = request.form.get('employee_id')
         email = request.form.get('email')
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
@@ -31,9 +30,16 @@ def signup():
         department = request.form.get('department')
         position = request.form.get('position')
         
+        # Additional personal information
+        phone = request.form.get('phone', '')
+        personal_email = request.form.get('personal_email', '')
+        date_of_birth = request.form.get('date_of_birth', '')
+        gender = request.form.get('gender', '')
+        address = request.form.get('address', '')
+        
         # Validation
-        if not all([employee_id, email, password, confirm_password, first_name, last_name]):
-            flash('All fields are required!', 'error')
+        if not all([email, password, confirm_password, first_name, last_name]):
+            flash('All required fields must be filled!', 'error')
             return render_template('auth/signup.html')
         
         if password != confirm_password:
@@ -46,16 +52,19 @@ def signup():
             flash(message, 'error')
             return render_template('auth/signup.html')
         
-        # Check if user already exists
-        if User.query.filter_by(employee_id=employee_id).first():
-            flash('Employee ID already exists!', 'error')
-            return render_template('auth/signup.html')
-        
+        # Check if email already exists
         if User.query.filter_by(email=email).first():
             flash('Email already registered!', 'error')
             return render_template('auth/signup.html')
         
         try:
+            from datetime import datetime
+            
+            # Generate employee ID automatically
+            company_code = "OI"  # Company code - can be made configurable
+            hire_year = datetime.now().year
+            employee_id = User.generate_employee_id(company_code, first_name, last_name, hire_year)
+            
             # Create new user
             user = User(
                 employee_id=employee_id,
@@ -68,24 +77,37 @@ def signup():
             db.session.add(user)
             db.session.flush()  # Get user ID
             
-            # Create employee profile
+            # Parse date of birth if provided
+            dob = None
+            if date_of_birth:
+                try:
+                    dob = datetime.strptime(date_of_birth, '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+            
+            # Create employee profile with additional personal information
             employee = Employee(
                 user_id=user.id,
                 first_name=first_name,
                 last_name=last_name,
                 department=department,
-                position=position
+                position=position,
+                phone=phone,
+                personal_email=personal_email,
+                date_of_birth=dob,
+                gender=gender,
+                address=address
             )
             
             db.session.add(employee)
             db.session.commit()
             
-            flash('Registration successful! You can now log in.', 'success')
+            flash(f'Registration successful! Your Employee ID is: {employee_id}. You can now log in.', 'success')
             return redirect(url_for('auth.login'))
             
         except Exception as e:
             db.session.rollback()
-            flash('An error occurred during registration. Please try again.', 'error')
+            flash(f'An error occurred during registration: {str(e)}', 'error')
             return render_template('auth/signup.html')
     
     return render_template('auth/signup.html')
@@ -104,6 +126,11 @@ def login():
         user = User.query.filter_by(email=email).first()
         
         if user and user.check_password(password):
+            # Check if account is deactivated
+            if not user.is_active:
+                flash('Your account has been deactivated. Please contact the administrator.', 'error')
+                return render_template('auth/login.html')
+            
             if not user.is_verified:
                 flash('Please verify your email before logging in.', 'error')
                 return render_template('auth/login.html')

@@ -18,6 +18,28 @@
                     <a href="{{ url_for('admin.edit_employee', employee_id=employee.id) }}" class="btn btn-primary">
                         <i class="fas fa-edit me-1"></i>Edit Employee
                     </a>
+                    
+                    <!-- Toggle Active/Inactive -->
+                    <form method="POST" 
+                          action="{{ url_for('admin.toggle_employee_status', employee_id=employee.id) }}" 
+                          style="display: inline;"
+                          onsubmit="return confirm('Are you sure you want to {{ 'deactivate' if employee.user.is_active else 'activate' }} this user account?');">
+                        <button type="submit" 
+                                class="btn btn-{{ 'warning' if employee.user.is_active else 'info' }}">
+                            <i class="fas fa-{{ 'ban' if employee.user.is_active else 'check-circle' }} me-1"></i>
+                            {{ 'Deactivate' if employee.user.is_active else 'Activate' }}
+                        </button>
+                    </form>
+                    
+                    <!-- Delete Employee -->
+                    <form method="POST" 
+                          action="{{ url_for('admin.delete_employee', employee_id=employee.id) }}" 
+                          style="display: inline;"
+                          onsubmit="return confirm('⚠️ WARNING: This will permanently delete {{ employee.full_name }} and all associated data. This action CANNOT be undone. Type DELETE to confirm.');">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-1"></i>Delete
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -37,11 +59,12 @@
                     <div class="row">
                         <div class="col-12 text-center mb-3">
                             {% if employee.profile_picture %}
-                                <img src="{{ url_for('static', filename='uploads/' + employee.profile_picture) }}" 
+                                <img src="{{ url_for('employee.serve_upload', filename='profiles/' + employee.profile_picture) }}" 
                                      alt="{{ employee.full_name }}" 
                                      class="rounded-circle" 
                                      width="120" 
-                                     height="120">
+                                     height="120"
+                                     style="object-fit: cover;">
                             {% else %}
                                 <div class="bg-secondary rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
                                     <i class="fas fa-user fa-3x text-white"></i>
@@ -108,10 +131,10 @@
                             <td>{{ employee.hire_date.strftime('%B %d, %Y') if employee.hire_date else 'Not set' }}</td>
                         </tr>
                         <tr>
-                            <td><strong>Salary:</strong></td>
+                            <td><strong>Monthly Wage:</strong></td>
                             <td>
-                                {% if employee.salary %}
-                                    ${{ "{:,.2f}"|format(employee.salary|float) }}
+                                {% if employee.monthly_wage or employee.salary %}
+                                    <strong>₹{{ "%.2f"|format((employee.monthly_wage or employee.salary)|float) }}</strong>
                                 {% else %}
                                     Not set
                                 {% endif %}
@@ -120,10 +143,16 @@
                         <tr>
                             <td><strong>Account Status:</strong></td>
                             <td>
-                                {% if employee.user and employee.user.is_verified %}
-                                    <span class="badge bg-success">Active</span>
+                                {% if employee.user %}
+                                    {% if not employee.user.is_active %}
+                                        <span class="badge bg-danger">Deactivated</span>
+                                    {% elif employee.user.is_verified %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pending Verification</span>
+                                    {% endif %}
                                 {% else %}
-                                    <span class="badge bg-warning">Pending Verification</span>
+                                    <span class="badge bg-secondary">No Account</span>
                                 {% endif %}
                             </td>
                         </tr>
@@ -148,6 +177,122 @@
             </div>
         </div>
     </div>
+    
+    <!-- Salary Components Breakdown -->
+    {% set salary_components = employee.salary_components %}
+    {% if salary_components %}
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-money-bill-wave me-2"></i>Salary Components Breakdown
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>Earnings</h6>
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Component</th>
+                                        <th>Computation</th>
+                                        <th class="text-end">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for component in salary_components %}
+                                        {% if component.component_type == 'earning' and component.is_active %}
+                                        <tr>
+                                            <td>{{ component.component_name }}</td>
+                                            <td>
+                                                {% if component.computation_type == 'fixed' %}
+                                                    Fixed
+                                                {% else %}
+                                                    {{ component.value }}% of {{ component.base_component|title }}
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">₹{{ "%.2f"|format(component.calculated_amount|float) }}</td>
+                                        </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <tr class="table-success">
+                                        <td colspan="2"><strong>Total Earnings</strong></td>
+                                        <td class="text-end">
+                                            <strong>
+                                                ₹{{ "%.2f"|format(
+                                                    salary_components|selectattr('component_type', 'equalto', 'earning')|
+                                                    selectattr('is_active', 'equalto', True)|
+                                                    map(attribute='calculated_amount')|sum|float
+                                                ) }}
+                                            </strong>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Deductions</h6>
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Component</th>
+                                        <th>Computation</th>
+                                        <th class="text-end">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for component in salary_components %}
+                                        {% if component.component_type == 'deduction' and component.is_active %}
+                                        <tr>
+                                            <td>{{ component.component_name }}</td>
+                                            <td>
+                                                {% if component.computation_type == 'fixed' %}
+                                                    Fixed
+                                                {% else %}
+                                                    {{ component.value }}% of {{ component.base_component|title }}
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">₹{{ "%.2f"|format(component.calculated_amount|float) }}</td>
+                                        </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <tr class="table-danger">
+                                        <td colspan="2"><strong>Total Deductions</strong></td>
+                                        <td class="text-end">
+                                            <strong>
+                                                ₹{{ "%.2f"|format(
+                                                    salary_components|selectattr('component_type', 'equalto', 'deduction')|
+                                                    selectattr('is_active', 'equalto', True)|
+                                                    map(attribute='calculated_amount')|sum|float
+                                                ) }}
+                                            </strong>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5 class="mb-0">Net Take-Home Salary</h5>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    {% set total_earnings = salary_components|selectattr('component_type', 'equalto', 'earning')|selectattr('is_active', 'equalto', True)|map(attribute='calculated_amount')|sum %}
+                                    {% set total_deductions = salary_components|selectattr('component_type', 'equalto', 'deduction')|selectattr('is_active', 'equalto', True)|map(attribute='calculated_amount')|sum %}
+                                    <h4 class="mb-0">₹{{ "%.2f"|format((total_earnings - total_deductions)|float) }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
     
     <!-- Additional Information -->
     <div class="row">
@@ -277,72 +422,11 @@
             </div>
         </div>
     </div>
-    
-    <!-- Action Buttons -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0">
-                        <i class="fas fa-tools me-2"></i>Quick Actions
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2 d-md-block">
-                        <a href="{{ url_for('admin.edit_employee', employee_id=employee.id) }}" class="btn btn-primary">
-                            <i class="fas fa-edit me-1"></i>Edit Employee
-                        </a>
-                        <button type="button" class="btn btn-info" onclick="viewAttendance({{ employee_id }})">
-                            <i class="fas fa-clock me-1"></i>View Full Attendance
-                        </button>
-                        <button type="button" class="btn btn-secondary" onclick="viewLeaveHistory({{ employee_id }})">
-                            <i class="fas fa-calendar-times me-1"></i>Leave History
-                        </button>
-                        <button type="button" class="btn btn-success" onclick="viewPayroll({{ employee_id }})">
-                            <i class="fas fa-money-bill-wave me-1"></i>Payroll Records
-                        </button>
-                        {% if employee.user and employee.user.is_verified %}
-                            <button type="button" class="btn btn-warning" onclick="deactivateEmployee({{ employee_id }})">
-                                <i class="fas fa-user-times me-1"></i>Deactivate
-                            </button>
-                        {% else %}
-                            <button type="button" class="btn btn-success" onclick="activateEmployee({ employee_id })">
-                                <i class="fas fa-user-check me-1"></i>Activate
-                            </button>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-function viewAttendance(employeeId) {
-    // Redirect to attendance management page for this employee
-    window.location.href = '{{ url_for("admin.attendance") }}?employee_id=' + employeeId;
-}
-
-function viewLeaveHistory(employeeId) {
-    // Redirect to leave management page for this employee
-    window.location.href = '{{ url_for("admin.leave_requests") }}?employee_id=' + employeeId;
-}
-
-function viewPayroll(employeeId) {
-    // Redirect to payroll page for this employee
-    window.location.href = '{{ url_for("admin.payroll") }}?employee_id=' + employeeId;
-}
-
-function activateEmployee(employeeId) {
-    if (confirm('Are you sure you want to activate this employee account?')) {
-        // Implementation for activating employee
-        alert('Employee activation feature will be implemented');
-    }
-}
-
-function deactivateEmployee(employeeId) {
     if (confirm('Are you sure you want to deactivate this employee account? They will not be able to login.')) {
         // Implementation for deactivating employee
         alert('Employee deactivation feature will be implemented');

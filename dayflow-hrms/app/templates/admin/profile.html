@@ -24,9 +24,10 @@
             <div class="card shadow-sm">
                 <div class="card-body text-center">
                     {% if employee.profile_picture %}
-                        <img src="{{ url_for('static', filename='uploads/' + employee.profile_picture) }}" 
+                        <img src="{{ url_for('employee.serve_upload', filename='profiles/' + employee.profile_picture) }}" 
                              class="profile-picture mb-3" 
-                             alt="Profile Picture">
+                             alt="Profile Picture"
+                             style="object-fit: cover;">
                     {% else %}
                         <div class="profile-picture mb-3 d-flex align-items-center justify-content-center bg-light">
                             <i class="fas fa-user-shield fa-4x text-primary"></i>

@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Create Payroll - Dayflow HRMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="fas fa-money-bill-wave me-2"></i>Create Payroll
+                </h2>
+                <a href="{{ url_for('admin.payroll') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Payroll
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-invoice-dollar me-2"></i>Generate Payroll for Employee
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.create_payroll') }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="employee_id" class="form-label">
+                                    <i class="fas fa-user me-2"></i>Select Employee <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" id="employee_id" name="employee_id" required>
+                                    <option value="">-- Select Employee --</option>
+                                    {% for employee in employees %}
+                                    <option value="{{ employee.id }}">
+                                        {{ employee.full_name }} - {{ employee.user.employee_id if employee.user else 'N/A' }} 
+                                        ({{ employee.department or 'No Dept' }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <label for="month" class="form-label">
+                                    <i class="fas fa-calendar me-2"></i>Month <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" id="month" name="month" required>
+                                    <option value="">-- Select Month --</option>
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <label for="year" class="form-label">
+                                    <i class="fas fa-calendar-alt me-2"></i>Year <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" class="form-control" id="year" name="year" 
+                                       value="{{ current_year }}" min="2020" max="2050" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="base_monthly_salary" class="form-label">
+                                    <i class="fas fa-rupee-sign me-2"></i>Base Monthly Salary <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" id="base_monthly_salary" 
+                                           name="base_monthly_salary" step="0.01" min="0" required 
+                                           placeholder="0.00">
+                                </div>
+                                <small class="text-muted">This will auto-calculate salary components</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="working_days" class="form-label">
+                                    <i class="fas fa-calendar-check me-2"></i>Working Days in Month <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" class="form-control" id="working_days" 
+                                       name="working_days" value="26" min="1" max="31" required>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> The system will automatically calculate:
+                            <ul class="mb-0 mt-2">
+                                <li>Unpaid leave deductions (if any)</li>
+                                <li>All salary components based on the base salary</li>
+                                <li>Total deductions and net salary</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check me-1"></i>Generate Payroll
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-populate current month
+document.addEventListener('DOMContentLoaded', function() {
+    const monthSelect = document.getElementById('month');
+    const currentMonth = new Date().getMonth() + 1;
+    monthSelect.value = currentMonth;
+    
+    // Get employee salary when selected
+    document.getElementById('employee_id').addEventListener('change', function() {
+        const employeeId = this.value;
+        if (employeeId) {
+            // You can add AJAX call here to fetch employee's configured salary
+            // For now, user will enter manually
+        }
+    });
+});
+</script>
+{% endblock %}

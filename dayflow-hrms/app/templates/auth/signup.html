@@ -18,21 +18,7 @@
                 <div class="card-body p-4">
                     <form method="POST" action="{{ url_for('auth.signup') }}">
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="employee_id" class="form-label">
-                                        <i class="fas fa-id-badge me-2"></i>Employee ID
-                                    </label>
-                                    <input type="text" 
-                                           class="form-control" 
-                                           id="employee_id" 
-                                           name="employee_id" 
-                                           required 
-                                           placeholder="e.g., EMP001">
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <div class="mb-3">
                                     <label for="email" class="form-label">
                                         <i class="fas fa-envelope me-2"></i>Email Address
@@ -109,6 +95,79 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- Additional Personal Information Section -->
+                        <hr class="my-3">
+                        <h6 class="text-muted mb-3"><i class="fas fa-user-circle me-2"></i>Personal Information (Optional)</h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="phone" class="form-label">
+                                        <i class="fas fa-phone me-2"></i>Phone Number
+                                    </label>
+                                    <input type="tel" 
+                                           class="form-control" 
+                                           id="phone" 
+                                           name="phone" 
+                                           placeholder="+91 XXXXXXXXXX">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="personal_email" class="form-label">
+                                        <i class="fas fa-envelope-open me-2"></i>Personal Email
+                                    </label>
+                                    <input type="email" 
+                                           class="form-control" 
+                                           id="personal_email" 
+                                           name="personal_email" 
+                                           placeholder="personal@email.com">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="date_of_birth" class="form-label">
+                                        <i class="fas fa-calendar me-2"></i>Date of Birth
+                                    </label>
+                                    <input type="date" 
+                                           class="form-control" 
+                                           id="date_of_birth" 
+                                           name="date_of_birth">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="gender" class="form-label">
+                                        <i class="fas fa-venus-mars me-2"></i>Gender
+                                    </label>
+                                    <select class="form-control" id="gender" name="gender">
+                                        <option value="">Select Gender</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="address" class="form-label">
+                                <i class="fas fa-map-marker-alt me-2"></i>Address
+                            </label>
+                            <textarea class="form-control" 
+                                      id="address" 
+                                      name="address" 
+                                      rows="2" 
+                                      placeholder="Enter your full address"></textarea>
+                        </div>
+                        
+                        <hr class="my-3">
                         
                         <div class="mb-3">
                             <label for="role" class="form-label">

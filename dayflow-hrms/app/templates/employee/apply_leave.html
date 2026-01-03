@@ -29,14 +29,14 @@
                 </div>
                 
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('employee.apply_leave') }}">
+                    <form method="POST" action="{{ url_for('employee.apply_leave') }}" enctype="multipart/form-data">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="leave_type" class="form-label">
                                         <i class="fas fa-tag me-2"></i>Leave Type
                                     </label>
-                                    <select class="form-control" id="leave_type" name="leave_type" required>
+                                    <select class="form-control" id="leave_type" name="leave_type" required onchange="toggleMedicalCertificate()">
                                         <option value="">Select Leave Type</option>
                                         <option value="paid">Paid Leave</option>
                                         <option value="sick">Sick Leave</option>
@@ -104,6 +104,25 @@
                                       placeholder="Please provide a detailed reason for your leave request..."></textarea>
                         </div>
                         
+                        <!-- Medical Certificate Upload (shown only for sick leave) -->
+                        <div class="mb-3" id="medical_certificate_section" style="display: none;">
+                            <label for="medical_certificate" class="form-label">
+                                <i class="fas fa-file-medical me-2"></i>Medical Certificate <span class="text-danger">*</span>
+                            </label>
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Important:</strong> Medical certificate is mandatory for sick leave requests. Accepted formats: PDF, DOC, DOCX (Max 10MB)
+                            </div>
+                            <input type="file" 
+                                   class="form-control" 
+                                   id="medical_certificate" 
+                                   name="medical_certificate"
+                                   accept=".pdf,.doc,.docx">
+                            <div class="form-text">
+                                Please upload a valid medical certificate from a registered medical practitioner.
+                            </div>
+                        </div>
+                        
                         <!-- Leave Balance Info (if available) -->
                         <div class="alert alert-info">
                             <h6 class="alert-heading">
@@ -143,6 +162,22 @@
 
 {% block scripts %}
 <script>
+// Toggle medical certificate section based on leave type
+function toggleMedicalCertificate() {
+    var leaveType = document.getElementById('leave_type').value;
+    var medicalSection = document.getElementById('medical_certificate_section');
+    var medicalInput = document.getElementById('medical_certificate');
+    
+    if (leaveType === 'sick') {
+        medicalSection.style.display = 'block';
+        medicalInput.required = true;
+    } else {
+        medicalSection.style.display = 'none';
+        medicalInput.required = false;
+        medicalInput.value = '';
+    }
+}
+
 // Calculate leave duration
 function calculateLeaveDays() {
     var startDate = new Date(document.getElementById('start_date').value);
@@ -191,6 +226,28 @@ document.getElementById('end_date').addEventListener('change', function() {
         this.setCustomValidity('');
         this.classList.remove('is-invalid');
         this.classList.add('is-valid');
+    }
+});
+
+// Validate medical certificate file
+document.getElementById('medical_certificate').addEventListener('change', function() {
+    var file = this.files[0];
+    if (file) {
+        var fileSize = file.size / 1024 / 1024; // Convert to MB
+        var allowedExtensions = ['pdf', 'doc', 'docx'];
+        var fileExtension = file.name.split('.').pop().toLowerCase();
+        
+        if (fileSize > 10) {
+            alert('File size exceeds 10MB limit!');
+            this.value = '';
+            return;
+        }
+        
+        if (!allowedExtensions.includes(fileExtension)) {
+            alert('Invalid file format! Only PDF, DOC, DOCX files are allowed.');
+            this.value = '';
+            return;
+        }
     }
 });
 

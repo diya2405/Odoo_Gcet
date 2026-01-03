@@ -119,14 +119,212 @@
                                        value="{{ employee.hire_date.strftime('%Y-%m-%d') if employee.hire_date else '' }}" required>
                             </div>
                             <div class="col-md-6">
-                                <label for="salary" class="form-label">Salary</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <input type="number" class="form-control" id="salary" name="salary" 
-                                           value="{{ employee.salary or '' }}" 
-                                           step="0.01" min="0" placeholder="0.00">
+                                <label for="working_days_per_week" class="form-label">Working Days/Week</label>
+                                <input type="number" class="form-control" id="working_days_per_week" name="working_days_per_week" 
+                                       value="{{ employee.working_days_per_week or 5 }}" min="1" max="7">
+                            </div>
+                        </div>
+                        
+                        <!-- Salary Information Section -->
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">
+                            <i class="fas fa-money-bill-wave me-2"></i>Salary Information
+                        </h6>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> Salary components will be automatically calculated based on the monthly wage.
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="monthly_wage" class="form-label">
+                                    Monthly Wage (Fixed) <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" id="monthly_wage" name="monthly_wage" 
+                                           value="{{ employee.monthly_wage or employee.salary or '' }}" 
+                                           step="1" min="0" placeholder="50000" required onchange="calculateSalaryComponents()">
+                                </div>
+                                <div class="form-text">
+                                    Enter the total monthly wage. All salary components will be calculated automatically.
                                 </div>
                             </div>
+                        </div>
+                        
+                        <!-- Salary Components Table -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="fas fa-calculator me-2"></i>Salary Components Breakdown</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th width="30%">Component</th>
+                                                <th width="25%">Computation</th>
+                                                <th width="20%">Value</th>
+                                                <th width="25%" class="text-end">Amount (₹)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="table-success">
+                                                <td><strong>Basic Salary</strong></td>
+                                                <td>50% of Wage</td>
+                                                <td>
+                                                    <input type="hidden" name="basic_percentage" value="50">
+                                                    50%
+                                                </td>
+                                                <td class="text-end">
+                                                    <input type="number" class="form-control form-control-sm text-end" 
+                                                           id="basic_salary_amount" readonly value="0">
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>House Rent Allowance (HRA)</td>
+                                                <td>50% of Basic</td>
+                                                <td>
+                                                    <input type="hidden" name="hra_percentage" value="50">
+                                                    50%
+                                                </td>
+                                                <td class="text-end">
+                                                    <input type="number" class="form-control form-control-sm text-end" 
+                                                           id="hra_amount" readonly value="0">
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Standard Allowance</td>
+                                                <td>Fixed Amount</td>
+                                                <td>
+                                                    <input type="number" class="form-control form-control-sm" 
+                                                           name="standard_allowance" id="standard_allowance" 
+                                                           value="4167" min="0" onchange="calculateSalaryComponents()">
+                                                </td>
+                                                <td class="text-end">
+                                                    <input type="number" class="form-control form-control-sm text-end" 
+                                                           id="standard_allowance_amount" readonly value="4167">
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Performance Bonus</td>
+                                                <td>8.33% of Wage</td>
+                                                <td>
+                                                    <input type="hidden" name="performance_bonus_percentage" value="8.33">
+                                                    8.33%
+                                                </td>
+                                                <td class="text-end">
+                                                    <input type="number" class="form-control form-control-sm text-end" 
+                                                           id="performance_bonus_amount" readonly value="0">
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Leave Travel Allowance (LTA)</td>
+                                                <td>8.333% of Wage</td>
+                                                <td>
+                                                    <input type="hidden" name="lta_percentage" value="8.333">
+                                                    8.333%
+                                                </td>
+                                                <td class="text-end">
+                                                    <input type="number" class="form-control form-control-sm text-end" 
+                                                           id="lta_amount" readonly value="0">
+                                                </td>
+                                            </tr>
+                                            <tr class="table-info">
+                                                <td><strong>Fixed Allowance</strong></td>
+                                                <td>Wage - Total of all components</td>
+                                                <td>Auto</td>
+                                                <td class="text-end">
+                                                    <input type="number" class="form-control form-control-sm text-end" 
+                                                           id="fixed_allowance_amount" readonly value="0">
+                                                </td>
+                                            </tr>
+                                            <tr class="table-primary">
+                                                <td colspan="3"><strong>Total Earnings</strong></td>
+                                                <td class="text-end">
+                                                    <strong id="total_earnings">₹0</strong>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Deductions Table -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="fas fa-minus-circle me-2"></i>Deductions</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th width="30%">Deduction</th>
+                                                <th width="25%">Computation</th>
+                                                <th width="20%">Rate</th>
+                                                <th width="25%" class="text-end">Amount (₹)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="table-warning">
+                                                <td><strong>Provident Fund (PF)</strong></td>
+                                                <td>12% of Basic</td>
+                                                <td>
+                                                    <input type="number" class="form-control form-control-sm" 
+                                                           name="pf_rate" id="pf_rate" 
+                                                           value="12" min="0" max="100" step="0.1" onchange="calculateSalaryComponents()">%
+                                                </td>
+                                                <td class="text-end">
+                                                    <input type="number" class="form-control form-control-sm text-end" 
+                                                           id="pf_amount" readonly value="0">
+                                                </td>
+                                            </tr>
+                                            <tr class="table-warning">
+                                                <td><strong>Professional Tax</strong></td>
+                                                <td>Fixed Amount</td>
+                                                <td>
+                                                    <input type="number" class="form-control form-control-sm" 
+                                                           name="professional_tax" id="professional_tax" 
+                                                           value="200" min="0" step="1" onchange="calculateSalaryComponents()">
+                                                </td>
+                                                <td class="text-end">
+                                                    <input type="number" class="form-control form-control-sm text-end" 
+                                                           id="professional_tax_amount" readonly value="200">
+                                                </td>
+                                            </tr>
+                                            <tr class="table-danger">
+                                                <td colspan="3"><strong>Total Deductions</strong></td>
+                                                <td class="text-end">
+                                                    <strong id="total_deductions">₹0</strong>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Net Salary Display -->
+                        <div class="card bg-success text-white mb-3">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5 class="mb-0">Net Take-Home Salary</h5>
+                                        <small>After all deductions</small>
+                                    </div>
+                                    <div class="col-md-6 text-end">
+                                        <h3 class="mb-0" id="net_salary">₹0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Validation:</strong> Total earnings should equal the monthly wage. 
+                            <span id="validation_message"></span>
                         </div>
                         
                         <!-- Account Settings Section -->
@@ -236,6 +434,74 @@ document.querySelector('form').addEventListener('submit', function(e) {
     }
     
     return true;
+});
+
+// Salary Components Calculation
+function calculateSalaryComponents() {
+    // Get monthly wage
+    const monthlyWage = parseFloat(document.getElementById('monthly_wage').value) || 0;
+    
+    // Get configurable values
+    const standardAllowance = parseFloat(document.getElementById('standard_allowance').value) || 4167;
+    const pfRate = parseFloat(document.getElementById('pf_rate').value) || 12;
+    const professionalTax = parseFloat(document.getElementById('professional_tax').value) || 200;
+    
+    // Calculate Basic Salary (50% of wage)
+    const basicSalary = Math.round(monthlyWage * 0.50);
+    document.getElementById('basic_salary_amount').value = basicSalary;
+    
+    // Calculate HRA (50% of basic)
+    const hra = Math.round(basicSalary * 0.50);
+    document.getElementById('hra_amount').value = hra;
+    
+    // Standard Allowance (already set)
+    document.getElementById('standard_allowance_amount').value = standardAllowance;
+    
+    // Calculate Performance Bonus (8.33% of wage)
+    const performanceBonus = Math.round(monthlyWage * 0.0833);
+    document.getElementById('performance_bonus_amount').value = performanceBonus;
+    
+    // Calculate LTA (8.333% of wage)
+    const lta = Math.round(monthlyWage * 0.08333);
+    document.getElementById('lta_amount').value = lta;
+    
+    // Calculate Fixed Allowance (wage - all other components)
+    const fixedAllowance = monthlyWage - (basicSalary + hra + standardAllowance + performanceBonus + lta);
+    document.getElementById('fixed_allowance_amount').value = Math.max(0, Math.round(fixedAllowance));
+    
+    // Calculate Total Earnings
+    const totalEarnings = basicSalary + hra + standardAllowance + performanceBonus + lta + Math.max(0, Math.round(fixedAllowance));
+    document.getElementById('total_earnings').textContent = '₹' + totalEarnings.toLocaleString('en-IN');
+    
+    // Calculate Deductions
+    // PF (12% of basic by default)
+    const pfAmount = Math.round(basicSalary * (pfRate / 100));
+    document.getElementById('pf_amount').value = pfAmount;
+    
+    // Professional Tax (fixed)
+    document.getElementById('professional_tax_amount').value = professionalTax;
+    
+    // Total Deductions
+    const totalDeductions = pfAmount + professionalTax;
+    document.getElementById('total_deductions').textContent = '₹' + totalDeductions.toLocaleString('en-IN');
+    
+    // Calculate Net Salary
+    const netSalary = totalEarnings - totalDeductions;
+    document.getElementById('net_salary').textContent = '₹' + netSalary.toLocaleString('en-IN');
+    
+    // Validation message
+    const validationMsg = document.getElementById('validation_message');
+    if (Math.abs(totalEarnings - monthlyWage) <= 1) {  // Allow 1 rupee rounding difference
+        validationMsg.innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> Total earnings match wage perfectly.</span>';
+    } else {
+        const difference = totalEarnings - monthlyWage;
+        validationMsg.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle"></i> Difference: ₹' + difference.toLocaleString('en-IN') + '</span>';
+    }
+}
+
+// Calculate on page load if wage is already set
+document.addEventListener('DOMContentLoaded', function() {
+    calculateSalaryComponents();
 });
 </script>
 {% endblock %}

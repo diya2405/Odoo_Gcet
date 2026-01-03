@@ -3,14 +3,11 @@
 {% block title %}Edit Profile - Dayflow HRMS{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <!-- Header -->
+<div class="container mt-4 mb-5">
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
-                <h2>
-                    <i class="fas fa-user-edit me-2"></i>Edit My Profile
-                </h2>
+                <h2><i class="fas fa-user-edit me-2"></i>Edit My Profile</h2>
                 <a href="{{ url_for('employee.employee_profile') }}" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left me-1"></i>Back to Profile
                 </a>
@@ -18,160 +15,262 @@
         </div>
     </div>
     
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-edit me-2"></i>Personal Information
-                    </h5>
-                </div>
-                
-                <div class="card-body">
-                    <form method="POST" action="{{ url_for('employee.edit_profile') }}" enctype="multipart/form-data">
-                        <!-- Profile Picture -->
-                        <div class="mb-4 text-center">
-                            {% if employee.profile_picture %}
-                                <img src="{{ url_for('static', filename='uploads/' + employee.profile_picture) }}" 
-                                     id="profilePreview"
-                                     class="profile-picture mb-3" 
-                                     alt="Profile Picture">
-                            {% else %}
-                                <div class="profile-picture mb-3 d-flex align-items-center justify-content-center bg-light" id="profilePlaceholder">
-                                    <i class="fas fa-user fa-4x text-muted"></i>
-                                </div>
-                                <img id="profilePreview" class="profile-picture mb-3" style="display: none;" alt="Profile Preview">
-                            {% endif %}
-                            
-                            <div>
-                                <label for="profile_picture" class="form-label">
-                                    <i class="fas fa-camera me-2"></i>Profile Picture
-                                </label>
-                                <input type="file" 
-                                       class="form-control" 
-                                       id="profile_picture" 
-                                       name="profile_picture" 
-                                       accept="image/*">
-                                <div class="form-text">
-                                    Accepted formats: JPG, PNG, GIF (Max 5MB)
-                                </div>
+    <form method="POST" enctype="multipart/form-data">
+        <div class="row">
+            <!-- Profile Picture Section -->
+            <div class="col-md-4">
+                <div class="card shadow-sm sticky-top" style="top: 20px;">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-camera me-2"></i>Profile Picture & Resume</h6>
+                    </div>
+                    <div class="card-body text-center">
+                        {% if employee.profile_picture %}
+                            <img src="{{ url_for('employee.serve_upload', filename='profiles/' + employee.profile_picture) }}" 
+                                 id="profilePreview"
+                                 class="rounded-circle mb-3" 
+                                 alt="Profile Picture"
+                                 style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #007bff;">
+                        {% else %}
+                            <div id="profilePlaceholder" class="rounded-circle mb-3 mx-auto d-flex align-items-center justify-content-center bg-light" 
+                                 style="width: 150px; height: 150px; border: 3px solid #ddd;">
+                                <i class="fas fa-user fa-4x text-muted"></i>
                             </div>
-                        </div>
-                        
-                        <!-- Contact Information -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="phone" class="form-label">
-                                        <i class="fas fa-phone me-2"></i>Phone Number
-                                    </label>
-                                    <input type="tel" 
-                                           class="form-control" 
-                                           id="phone" 
-                                           name="phone" 
-                                           value="{{ employee.phone or '' }}"
-                                           placeholder="Enter your phone number">
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">
-                                        <i class="fas fa-envelope me-2"></i>Email (Read Only)
-                                    </label>
-                                    <input type="email" 
-                                           class="form-control" 
-                                           value="{{ employee.user.email }}" 
-                                           readonly>
-                                    <div class="form-text">
-                                        Contact admin to change email address
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                            <img id="profilePreview" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #007bff; display: none;" alt="Profile Preview">
+                        {% endif %}
                         
                         <div class="mb-3">
-                            <label for="address" class="form-label">
-                                <i class="fas fa-home me-2"></i>Address
-                            </label>
-                            <textarea class="form-control" 
-                                      id="address" 
-                                      name="address" 
-                                      rows="3" 
-                                      placeholder="Enter your full address">{{ employee.address or '' }}</textarea>
+                            <label for="profile_picture" class="form-label">Upload Photo</label>
+                            <input type="file" class="form-control" id="profile_picture" name="profile_picture" accept="image/*">
+                            <small class="text-muted">JPG, PNG, GIF (Max 10MB)</small>
                         </div>
                         
-                        <!-- Read-only fields -->
-                        <div class="alert alert-info">
-                            <h6 class="alert-heading">
-                                <i class="fas fa-info-circle me-2"></i>Employment Information (Read Only)
-                            </h6>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <strong>Employee ID:</strong> {{ employee.user.employee_id }}<br>
-                                    <strong>Department:</strong> {{ employee.department or 'Not assigned' }}<br>
+                        <hr>
+                        
+                        <div class="mb-3 text-start">
+                            <label for="resume" class="form-label"><i class="fas fa-file-pdf me-2"></i>Resume</label>
+                            {% if employee.resume %}
+                                <div class="alert alert-info p-2 mb-2">
+                                    <small><i class="fas fa-check-circle me-1"></i>Current: {{ employee.resume }}</small>
                                 </div>
-                                <div class="col-md-6">
-                                    <strong>Position:</strong> {{ employee.position or 'Not assigned' }}<br>
-                                    <strong>Hire Date:</strong> 
-                                    {% if employee.hire_date %}
-                                        {{ employee.hire_date.strftime('%m/%d/%Y') }}
-                                    {% else %}
-                                        Not set
-                                    {% endif %}
-                                </div>
+                            {% endif %}
+                            <input type="file" class="form-control" id="resume" name="resume" accept=".pdf,.doc,.docx">
+                            <small class="text-muted">PDF, DOC, DOCX (Max 10MB)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Editable Fields -->
+            <div class="col-md-8">
+                <!-- Basic Information Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-id-card me-2"></i>Basic Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">First Name (Read Only)</label>
+                                <input type="text" class="form-control" value="{{ employee.first_name }}" readonly>
                             </div>
-                            <small class="text-muted">
-                                Contact your HR department to update employment information.
-                            </small>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Last Name (Read Only)</label>
+                                <input type="text" class="form-control" value="{{ employee.last_name }}" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Company Email (Read Only)</label>
+                                <input type="email" class="form-control" value="{{ employee.user.email }}" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="personal_email" class="form-label">Personal Email</label>
+                                <input type="email" class="form-control" id="personal_email" name="personal_email" 
+                                       value="{{ employee.personal_email or '' }}" placeholder="your@email.com">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="{{ employee.phone or '' }}" placeholder="+91 XXXXXXXXXX">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
+                                       value="{{ employee.date_of_birth.strftime('%Y-%m-%d') if employee.date_of_birth else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="gender" class="form-label">Gender</label>
+                                <select class="form-control" id="gender" name="gender">
+                                    <option value="">Select Gender</option>
+                                    <option value="Male" {% if employee.gender == 'Male' %}selected{% endif %}>Male</option>
+                                    <option value="Female" {% if employee.gender == 'Female' %}selected{% endif %}>Female</option>
+                                    <option value="Other" {% if employee.gender == 'Other' %}selected{% endif %}>Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="marital_status" class="form-label">Marital Status</label>
+                                <select class="form-control" id="marital_status" name="marital_status">
+                                    <option value="">Select Status</option>
+                                    <option value="Single" {% if employee.marital_status == 'Single' %}selected{% endif %}>Single</option>
+                                    <option value="Married" {% if employee.marital_status == 'Married' %}selected{% endif %}>Married</option>
+                                    <option value="Divorced" {% if employee.marital_status == 'Divorced' %}selected{% endif %}>Divorced</option>
+                                    <option value="Widowed" {% if employee.marital_status == 'Widowed' %}selected{% endif %}>Widowed</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="nationality" class="form-label">Nationality</label>
+                                <input type="text" class="form-control" id="nationality" name="nationality" 
+                                       value="{{ employee.nationality or 'Indian' }}" placeholder="Indian">
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="address" class="form-label">Address</label>
+                                <textarea class="form-control" id="address" name="address" rows="3" 
+                                          placeholder="Enter your full address">{{ employee.address or '' }}</textarea>
+                            </div>
                         </div>
-                        
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{{ url_for('employee.employee_profile') }}" class="btn btn-outline-secondary me-md-2">
-                                <i class="fas fa-times me-1"></i>Cancel
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-1"></i>Save Changes
-                            </button>
+                    </div>
+                </div>
+                
+                <!-- Emergency Contact Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-warning">
+                        <h6 class="mb-0"><i class="fas fa-phone-alt me-2"></i>Emergency Contact</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="emergency_contact_name" class="form-label">Contact Name</label>
+                                <input type="text" class="form-control" id="emergency_contact_name" name="emergency_contact_name" 
+                                       value="{{ employee.emergency_contact_name or '' }}" placeholder="Full Name">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="emergency_contact_phone" class="form-label">Contact Phone</label>
+                                <input type="tel" class="form-control" id="emergency_contact_phone" name="emergency_contact_phone" 
+                                       value="{{ employee.emergency_contact_phone or '' }}" placeholder="+91 XXXXXXXXXX">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="emergency_contact_relationship" class="form-label">Relationship</label>
+                                <input type="text" class="form-control" id="emergency_contact_relationship" name="emergency_contact_relationship" 
+                                       value="{{ employee.emergency_contact_relationship or '' }}" placeholder="e.g., Spouse, Parent, Sibling">
+                            </div>
                         </div>
-                    </form>
+                    </div>
+                </div>
+                
+                <!-- Bank Details Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="fas fa-university me-2"></i>Bank Details</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="bank_name" class="form-label">Bank Name</label>
+                                <input type="text" class="form-control" id="bank_name" name="bank_name" 
+                                       value="{{ employee.bank_name or '' }}" placeholder="e.g., HDFC Bank">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="account_number" class="form-label">Account Number</label>
+                                <input type="text" class="form-control" id="account_number" name="account_number" 
+                                       value="{{ employee.account_number or '' }}" placeholder="Enter account number">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="ifsc_code" class="form-label">IFSC Code</label>
+                                <input type="text" class="form-control" id="ifsc_code" name="ifsc_code" 
+                                       value="{{ employee.ifsc_code or '' }}" placeholder="e.g., HDFC0001234">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Government IDs Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="fas fa-id-card-alt me-2"></i>Government IDs</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="pan_no" class="form-label">PAN Number</label>
+                                <input type="text" class="form-control text-uppercase" id="pan_no" name="pan_no" 
+                                       value="{{ employee.pan_no or '' }}" placeholder="ABCDE1234F" maxlength="10">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="uan_no" class="form-label">UAN Number</label>
+                                <input type="text" class="form-control" id="uan_no" name="uan_no" 
+                                       value="{{ employee.uan_no or '' }}" placeholder="12 digit UAN" maxlength="12">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Skills & Interests Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Skills & Interests</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="skills" class="form-label">Skills</label>
+                                <textarea class="form-control" id="skills" name="skills" rows="3" 
+                                          placeholder="e.g., Python, JavaScript, Project Management">{{ employee.skills or '' }}</textarea>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="interests" class="form-label">Interests</label>
+                                <textarea class="form-control" id="interests" name="interests" rows="3" 
+                                          placeholder="e.g., Reading, Photography, Sports">{{ employee.interests or '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
                 </div>
             </div>
         </div>
-    </div>
+    </form>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<style>
-.profile-picture {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 4px solid #fff;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-}
-</style>
 
 <script>
 // Profile picture preview
 document.getElementById('profile_picture').addEventListener('change', function(e) {
-    if (e.target.files && e.target.files[0]) {
+    const file = e.target.files[0];
+    if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
             const preview = document.getElementById('profilePreview');
             const placeholder = document.getElementById('profilePlaceholder');
-            
             preview.src = e.target.result;
             preview.style.display = 'block';
-            
             if (placeholder) {
                 placeholder.style.display = 'none';
             }
         };
-        reader.readAsDataURL(e.target.files[0]);
+        reader.readAsDataURL(file);
     }
 });
+
+// PAN number validation
+document.getElementById('pan_no').addEventListener('input', function(e) {
+    this.value = this.value.toUpperCase();
+});
 </script>
+
+<style>
+.sticky-top {
+    position: sticky;
+}
+
+.card {
+    border: 1px solid #e0e0e0;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+</style>
 {% endblock %}

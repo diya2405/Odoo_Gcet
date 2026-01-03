@@ -26,7 +26,7 @@
                         <option value="">All Employees</option>
                         {% for employee in employees %}
                             <option value="{{ employee.id }}" 
-                                {% if employee.id == selected_employee_id %}selected{% endif %}>
+                                {% if employee.id == selected_employee %}selected{% endif %}>
                                 {{ employee.first_name }} {{ employee.last_name }}
                             </option>
                         {% endfor %}
@@ -133,17 +133,17 @@
                                     </div>
                                 </td>
                                 <td>{{ payroll.employee.department or 'N/A' }}</td>
-                                <td>{{ payroll.pay_period }}</td>
+                                <td>{{ payroll.pay_period_start.strftime('%b %Y') if payroll.pay_period_start else 'N/A' }}</td>
                                 <td>${{ "%.2f"|format(payroll.basic_salary) }}</td>
                                 <td>${{ "%.2f"|format(payroll.overtime_pay or 0) }}</td>
                                 <td>${{ "%.2f"|format(payroll.deductions or 0) }}</td>
                                 <td>
-                                    <strong>${{ "%.2f"|format(payroll.net_salary) }}</strong>
+                                    <strong>${{ "%.2f"|format(payroll.net_pay) }}</strong>
                                 </td>
                                 <td>
-                                    {% if payroll.payment_status == 'paid' %}
+                                    {% if payroll.payment_status and payroll.payment_status.lower() == 'paid' %}
                                         <span class="badge bg-success">Paid</span>
-                                    {% elif payroll.payment_status == 'pending' %}
+                                    {% elif payroll.payment_status and payroll.payment_status.lower() == 'pending' %}
                                         <span class="badge bg-warning">Pending</span>
                                     {% else %}
                                         <span class="badge bg-secondary">Draft</span>
@@ -156,7 +156,7 @@
                                                 onclick="viewPayroll({{ payroll.id }})">
                                             View
                                         </button>
-                                        {% if payroll.payment_status != 'paid' %}
+                                        {% if not payroll.payment_status or payroll.payment_status.lower() != 'paid' %}
                                             <button type="button" class="btn btn-sm btn-outline-success"
                                                     onclick="markAsPaid({{ payroll.id }})">
                                                 Mark Paid
@@ -256,45 +256,142 @@ function viewPayroll(payrollId) {
     document.getElementById('payrollDetails').innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
     
     fetch(`/admin/payroll/${payrollId}`)
-        .then(response => response.json())
+        .then(async response => {
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             let html = `
-                <div class="row">
+                <div class="row mb-3">
                     <div class="col-md-6">
-                        <h6>Employee Information</h6>
+                        <h6><i class="fas fa-user me-2"></i>Employee Information</h6>
                         <p><strong>Name:</strong> ${data.employee_name}</p>
                         <p><strong>Employee ID:</strong> ${data.employee_id}</p>
                         <p><strong>Department:</strong> ${data.department || 'N/A'}</p>
                         <p><strong>Position:</strong> ${data.position || 'N/A'}</p>
                     </div>
                     <div class="col-md-6">
-                        <h6>Pay Period Information</h6>
+                        <h6><i class="fas fa-calendar me-2"></i>Pay Period Information</h6>
                         <p><strong>Pay Period:</strong> ${data.pay_period}</p>
+                        <p><strong>Days Present:</strong> ${data.days_present} / ${data.total_working_days}</p>
+                        <p><strong>Paid Leave:</strong> ${data.paid_leave_days || 0} days</p>
+                        <p><strong>Unpaid Leave:</strong> ${data.unpaid_leave_days || 0} days</p>
                         <p><strong>Payment Status:</strong> <span class="badge bg-${data.payment_status == 'paid' ? 'success' : data.payment_status == 'pending' ? 'warning' : 'secondary'}">${data.payment_status}</span></p>
-                        <p><strong>Generated On:</strong> ${data.created_at}</p>
                     </div>
                 </div>
                 <hr>
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6>Earnings</h6>
-                        <p><strong>Basic Salary:</strong> $${data.basic_salary}</p>
-                        <p><strong>Overtime Pay:</strong> $${data.overtime_pay || '0.00'}</p>
-                        <p><strong>Bonuses:</strong> $${data.bonuses || '0.00'}</p>
-                        <p><strong>Gross Salary:</strong> $${data.gross_salary}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <h6>Deductions</h6>
-                        <p><strong>Tax Deductions:</strong> $${data.tax_deductions || '0.00'}</p>
-                        <p><strong>Insurance:</strong> $${data.insurance || '0.00'}</p>
-                        <p><strong>Other Deductions:</strong> $${data.other_deductions || '0.00'}</p>
-                        <p><strong>Total Deductions:</strong> $${data.total_deductions || '0.00'}</p>
+                
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-primary"><i class="fas fa-plus-circle me-2"></i>Earnings Breakdown</h6>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <td>Base Monthly Salary</td>
+                                    <td class="text-end">$${parseFloat(data.base_monthly_salary || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td>Basic Salary</td>
+                                    <td class="text-end">$${parseFloat(data.basic_salary || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td>House Rent Allowance (HRA)</td>
+                                    <td class="text-end">$${parseFloat(data.hra || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td>Standard Allowance</td>
+                                    <td class="text-end">$${parseFloat(data.standard_allowance || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td>Performance Bonus</td>
+                                    <td class="text-end">$${parseFloat(data.performance_bonus || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td>Leave Travel Allowance (LTA)</td>
+                                    <td class="text-end">$${parseFloat(data.lta || 0).toFixed(2)}</td>
+                                </tr>
+                                ${parseFloat(data.increment_amount || 0) > 0 ? `
+                                <tr class="table-success">
+                                    <td><strong>Salary Increment (${parseFloat(data.increment_percentage || 0).toFixed(2)}%)</strong></td>
+                                    <td class="text-end"><strong>$${parseFloat(data.increment_amount || 0).toFixed(2)}</strong></td>
+                                </tr>` : ''}
+                                ${parseFloat(data.special_bonus || 0) > 0 ? `
+                                <tr class="table-success">
+                                    <td><strong>Special Bonus</strong></td>
+                                    <td class="text-end"><strong>$${parseFloat(data.special_bonus || 0).toFixed(2)}</strong></td>
+                                </tr>` : ''}
+                                ${parseFloat(data.festival_bonus || 0) > 0 ? `
+                                <tr class="table-success">
+                                    <td><strong>Festival Bonus</strong></td>
+                                    <td class="text-end"><strong>$${parseFloat(data.festival_bonus || 0).toFixed(2)}</strong></td>
+                                </tr>` : ''}
+                                ${parseFloat(data.other_earnings || 0) > 0 ? `
+                                <tr>
+                                    <td>Other Earnings</td>
+                                    <td class="text-end">$${parseFloat(data.other_earnings || 0).toFixed(2)}</td>
+                                </tr>` : ''}
+                                ${parseFloat(data.overtime_hours || 0) > 0 ? `
+                                <tr>
+                                    <td>Overtime (${parseFloat(data.overtime_hours || 0).toFixed(1)} hrs @ $${parseFloat(data.overtime_rate || 0).toFixed(2)}/hr)</td>
+                                    <td class="text-end">$${parseFloat(data.overtime_pay || 0).toFixed(2)}</td>
+                                </tr>` : ''}
+                                <tr class="table-primary">
+                                    <td><strong>Gross Salary</strong></td>
+                                    <td class="text-end"><strong>$${parseFloat(data.gross_pay || 0).toFixed(2)}</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
+                
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-danger"><i class="fas fa-minus-circle me-2"></i>Deductions Breakdown</h6>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <td>Provident Fund (PF)</td>
+                                    <td class="text-end">$${parseFloat(data.pf_deduction || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td>Professional Tax</td>
+                                    <td class="text-end">$${parseFloat(data.professional_tax || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td>Income Tax (TDS)</td>
+                                    <td class="text-end">$${parseFloat(data.tax_deductions || 0).toFixed(2)}</td>
+                                </tr>
+                                ${parseFloat(data.unpaid_leave_deduction || 0) > 0 ? `
+                                <tr class="table-danger">
+                                    <td><strong>Unpaid Leave Deduction (${data.unpaid_leave_days || 0} days)</strong></td>
+                                    <td class="text-end"><strong>-$${parseFloat(data.unpaid_leave_deduction || 0).toFixed(2)}</strong></td>
+                                </tr>` : ''}
+                                ${parseFloat(data.deductions || 0) > 0 ? `
+                                <tr>
+                                    <td>Other Deductions</td>
+                                    <td class="text-end">$${parseFloat(data.deductions || 0).toFixed(2)}</td>
+                                </tr>` : ''}
+                                <tr class="table-danger">
+                                    <td><strong>Total Deductions</strong></td>
+                                    <td class="text-end"><strong>$${parseFloat(data.total_deductions || 0).toFixed(2)}</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
                 <hr>
                 <div class="row">
                     <div class="col-12">
-                        <h5><strong>Net Salary: $${data.net_salary}</strong></h5>
+                        <div class="alert alert-success">
+                            <h5 class="mb-0">
+                                <i class="fas fa-money-bill-wave me-2"></i>
+                                <strong>Net Salary Payable: $${parseFloat(data.net_pay || 0).toFixed(2)}</strong>
+                            </h5>
+                        </div>
                     </div>
                 </div>
             `;
@@ -302,7 +399,11 @@ function viewPayroll(payrollId) {
             document.getElementById('payrollDetails').innerHTML = html;
         })
         .catch(error => {
-            document.getElementById('payrollDetails').innerHTML = '<div class="alert alert-danger">Error loading payroll details</div>';
+            console.error('Error loading payroll:', error);
+            document.getElementById('payrollDetails').innerHTML = `<div class="alert alert-danger">
+                <strong>Error loading payroll details</strong><br>
+                ${error.message || 'Unknown error'}
+            </div>`;
         });
 }
 

@@ -16,6 +16,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), nullable=False, default='employee')  # 'employee' or 'admin'
     is_verified = db.Column(db.Boolean, default=False)
+    is_active = db.Column(db.Boolean, default=True)  # Track if account is active/deactivated
     password_changed = db.Column(db.Boolean, default=False)  # Track if user changed auto-generated password
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
@@ -91,7 +92,7 @@ class Employee(db.Model):
     skills = db.Column(db.Text)  # JSON or comma-separated
     certifications = db.Column(db.Text)  # JSON or comma-separated
     interests = db.Column(db.Text)
-    resume = db.Column(db.String(200))  # File path
+    resume = db.Column(db.String(200))  # File path for resume
     
     # Manager relationship
     manager_id = db.Column(db.Integer, db.ForeignKey('employees.id'))
@@ -103,16 +104,23 @@ class Employee(db.Model):
     working_hours_per_day = db.Column(db.Float, default=8.0)
     working_days_per_week = db.Column(db.Integer, default=5)
     
-    profile_picture = db.Column(db.String(100))
+    # Emergency Contact
+    emergency_contact_name = db.Column(db.String(100))
+    emergency_contact_phone = db.Column(db.String(20))
+    emergency_contact_relationship = db.Column(db.String(50))
+    
+    # Profile Picture
+    profile_picture = db.Column(db.String(200))
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    attendance_records = db.relationship('Attendance', backref='employee', lazy=True)
-    leave_requests = db.relationship('LeaveRequest', backref='employee', lazy=True)
-    payroll_records = db.relationship('Payroll', backref='employee', lazy=True)
-    salary_components = db.relationship('SalaryComponent', backref='employee', lazy=True)
-    leave_allocations = db.relationship('LeaveAllocation', backref='employee', lazy=True)
+    attendance_records = db.relationship('Attendance', backref='employee', lazy=True, cascade='all, delete-orphan')
+    leave_requests = db.relationship('LeaveRequest', backref='employee', lazy=True, cascade='all, delete-orphan')
+    payroll_records = db.relationship('Payroll', backref='employee', lazy=True, cascade='all, delete-orphan')
+    salary_components = db.relationship('SalaryComponent', backref='employee', lazy=True, cascade='all, delete-orphan')
+    leave_allocations = db.relationship('LeaveAllocation', backref='employee', lazy=True, cascade='all, delete-orphan')
     
     @property
     def full_name(self):
@@ -287,6 +295,9 @@ class Payroll(db.Model):
     pay_period_start = db.Column(db.Date, nullable=False)
     pay_period_end = db.Column(db.Date, nullable=False)
     
+    # Base Salary Information
+    base_monthly_salary = db.Column(db.Numeric(10, 2), nullable=False)  # Original salary without changes
+    
     # Salary components breakdown
     basic_salary = db.Column(db.Numeric(10, 2), nullable=False)
     hra = db.Column(db.Numeric(10, 2), default=0.00)
@@ -296,22 +307,36 @@ class Payroll(db.Model):
     fixed_allowance = db.Column(db.Numeric(10, 2), default=0.00)
     allowances = db.Column(db.Numeric(10, 2), default=0.00)  # Total other allowances
     
+    # Increments and Additional Bonuses
+    increment_amount = db.Column(db.Numeric(10, 2), default=0.00)  # Salary increment given
+    increment_percentage = db.Column(db.Numeric(5, 2), default=0.00)  # Percentage of increment
+    special_bonus = db.Column(db.Numeric(10, 2), default=0.00)  # Any special bonus
+    festival_bonus = db.Column(db.Numeric(10, 2), default=0.00)  # Festival/Year-end bonus
+    other_earnings = db.Column(db.Numeric(10, 2), default=0.00)  # Other earnings
+    
     # Deductions
     pf_deduction = db.Column(db.Numeric(10, 2), default=0.00)  # Provident Fund (12% of basic)
     professional_tax = db.Column(db.Numeric(10, 2), default=200.00)  # Fixed ₹200
     deductions = db.Column(db.Numeric(10, 2), default=0.00)  # Total other deductions
     tax_deductions = db.Column(db.Numeric(10, 2), default=0.00)
     
+    # Unpaid Leave Deductions
+    unpaid_leave_deduction = db.Column(db.Numeric(10, 2), default=0.00)  # Amount deducted for unpaid leaves
+    
     # Attendance based
     days_present = db.Column(db.Integer, default=0)
     total_working_days = db.Column(db.Integer, default=0)
     unpaid_leave_days = db.Column(db.Integer, default=0)
+    paid_leave_days = db.Column(db.Integer, default=0)
     
     overtime_hours = db.Column(db.Float, default=0.0)
     overtime_rate = db.Column(db.Numeric(8, 2), default=0.00)
     
     gross_pay = db.Column(db.Numeric(10, 2))
+    total_deductions = db.Column(db.Numeric(10, 2), default=0.00)  # Sum of all deductions
     net_pay = db.Column(db.Numeric(10, 2))
+    payment_status = db.Column(db.String(20), default='pending')  # pending, processed, paid
+    payment_date = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def calculate_gross_pay(self):
@@ -324,29 +349,53 @@ class Payroll(db.Model):
             float(self.performance_bonus) + 
             float(self.lta) + 
             float(self.fixed_allowance) + 
-            float(self.allowances) + 
+            float(self.allowances) +
+            float(self.increment_amount) +
+            float(self.special_bonus) +
+            float(self.festival_bonus) +
+            float(self.other_earnings) +
             overtime_pay
         )
         return self.gross_pay
     
-    def calculate_net_pay(self):
-        """Calculate net pay after all deductions"""
-        self.calculate_gross_pay()
-        total_deductions = (
+    def calculate_deductions(self):
+        """Calculate total deductions"""
+        self.total_deductions = (
             float(self.pf_deduction) + 
             float(self.professional_tax) + 
             float(self.deductions) + 
-            float(self.tax_deductions)
+            float(self.tax_deductions) +
+            float(self.unpaid_leave_deduction)
         )
-        
-        # Adjust for unpaid leaves
+        return self.total_deductions
+    
+    def calculate_unpaid_leave_deduction(self):
+        """Calculate deduction for unpaid leaves"""
         if self.total_working_days > 0 and self.unpaid_leave_days > 0:
-            per_day_salary = float(self.gross_pay) / self.total_working_days
-            unpaid_leave_deduction = per_day_salary * self.unpaid_leave_days
-            total_deductions += unpaid_leave_deduction
-        
-        self.net_pay = float(self.gross_pay) - total_deductions
+            # Calculate per day salary from base monthly salary
+            per_day_salary = float(self.base_monthly_salary) / self.total_working_days
+            self.unpaid_leave_deduction = per_day_salary * self.unpaid_leave_days
+        else:
+            self.unpaid_leave_deduction = 0.00
+        return self.unpaid_leave_deduction
+    
+    def calculate_net_pay(self):
+        """Calculate net pay after all deductions"""
+        self.calculate_gross_pay()
+        self.calculate_unpaid_leave_deduction()
+        self.calculate_deductions()
+        self.net_pay = float(self.gross_pay) - float(self.total_deductions)
         return self.net_pay
+    
+    @property
+    def total_earnings(self):
+        """Property to get total earnings (same as gross pay)"""
+        return self.gross_pay
+    
+    @property
+    def actual_working_days(self):
+        """Calculate actual working days excluding unpaid leaves"""
+        return self.days_present - self.unpaid_leave_days
     
     def __repr__(self):
         return f'<Payroll {self.employee.full_name} - {self.pay_period_start}>'
@@ -503,3 +552,42 @@ def allocate_leave_for_employee(employee_id, year=None):
             db.session.add(allocation)
     
     db.session.commit()
+
+
+class Certificate(db.Model):
+    """Model for employee certificates"""
+    __tablename__ = 'certificates'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
+    certificate_name = db.Column(db.String(200), nullable=False)
+    certificate_file = db.Column(db.String(300), nullable=False)  # File path
+    issue_date = db.Column(db.Date)
+    expiry_date = db.Column(db.Date)
+    issuing_organization = db.Column(db.String(200))
+    description = db.Column(db.Text)
+    file_size = db.Column(db.Integer)  # Size in bytes
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    employee = db.relationship('Employee', backref=db.backref('certificates_list', lazy=True, cascade='all, delete-orphan'))
+    
+    @property
+    def file_size_formatted(self):
+        """Return formatted file size"""
+        size = self.file_size or 0
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} TB"
+    
+    @property
+    def is_expired(self):
+        """Check if certificate is expired"""
+        if self.expiry_date:
+            return self.expiry_date < date.today()
+        return False
+    
+    def __repr__(self):
+        return f'<Certificate {self.certificate_name}>'

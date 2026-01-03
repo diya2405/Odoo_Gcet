@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}Payslip - Dayflow HRMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="fas fa-file-invoice-dollar me-2"></i>Payslip
+                </h2>
+                <div>
+                    <button onclick="window.print()" class="btn btn-primary">
+                        <i class="fas fa-print me-1"></i>Print Payslip
+                    </button>
+                    <a href="{{ url_for('admin.payroll') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Payroll
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <!-- Company Header -->
+                    <div class="text-center mb-4">
+                        <h3 class="mb-0">DayFlow HRMS</h3>
+                        <p class="text-muted mb-0">Salary Slip</p>
+                        <p class="text-muted">{{ payroll.pay_period }}</p>
+                    </div>
+
+                    <hr>
+
+                    <!-- Employee Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <table class="table table-borderless table-sm">
+                                <tr>
+                                    <td><strong>Employee Name:</strong></td>
+                                    <td>{{ payroll.employee.full_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Employee ID:</strong></td>
+                                    <td>{{ payroll.employee.user.employee_id if payroll.employee.user else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Department:</strong></td>
+                                    <td>{{ payroll.employee.department or 'N/A' }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless table-sm">
+                                <tr>
+                                    <td><strong>Position:</strong></td>
+                                    <td>{{ payroll.employee.position or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Pay Period:</strong></td>
+                                    <td>{{ payroll.pay_period_start.strftime('%d %b %Y') }} - {{ payroll.pay_period_end.strftime('%d %b %Y') }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Payment Date:</strong></td>
+                                    <td>{{ payroll.payment_date.strftime('%d %b %Y') if payroll.payment_date else 'Pending' }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Salary Breakdown -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="mb-3 text-success">
+                                <i class="fas fa-plus-circle me-2"></i>Earnings
+                            </h5>
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Component</th>
+                                        <th class="text-end">Amount (₹)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Basic Salary</td>
+                                        <td class="text-end">{{ "%.2f"|format(payroll.basic_salary) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>House Rent Allowance (HRA)</td>
+                                        <td class="text-end">{{ "%.2f"|format(payroll.hra) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Standard Allowance</td>
+                                        <td class="text-end">{{ "%.2f"|format(payroll.standard_allowance) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Performance Bonus</td>
+                                        <td class="text-end">{{ "%.2f"|format(payroll.performance_bonus) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Leave Travel Allowance (LTA)</td>
+                                        <td class="text-end">{{ "%.2f"|format(payroll.lta) }}</td>
+                                    </tr>
+                                    {% if payroll.fixed_allowance > 0 %}
+                                    <tr>
+                                        <td>Fixed Allowance</td>
+                                        <td class="text-end">{{ "%.2f"|format(payroll.fixed_allowance) }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if payroll.increment_amount > 0 %}
+                                    <tr>
+                                        <td>Increment</td>
+                                        <td class="text-end">{{ "%.2f"|format(payroll.increment_amount) }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if payroll.special_bonus > 0 %}
+                                    <tr>
+                                        <td>Special Bonus</td>
+                                        <td class="text-end">{{ "%.2f"|format(payroll.special_bonus) }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if payroll.festival_bonus > 0 %}
+                                    <tr>
+                                        <td>Festival Bonus</td>
+                                        <td class="text-end">{{ "%.2f"|format(payroll.festival_bonus) }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if payroll.other_earnings > 0 %}
+                                    <tr>
+                                        <td>Other Earnings</td>
+                                        <td class="text-end">{{ "%.2f"|format(payroll.other_earnings) }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr class="table-success">
+                                        <td><strong>Total Earnings</strong></td>
+                                        <td class="text-end"><strong>{{ "%.2f"|format(payroll.gross_pay) }}</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="col-md-6">
+                            <h5 class="mb-3 text-danger">
+                                <i class="fas fa-minus-circle me-2"></i>Deductions
+                            </h5>
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Component</th>
+                                        <th class="text-end">Amount (₹)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Provident Fund (PF)</td>
+                                        <td class="text-end">{{ "%.2f"|format(payroll.pf_deduction) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Professional Tax</td>
+                                        <td class="text-end">{{ "%.2f"|format(payroll.professional_tax) }}</td>
+                                    </tr>
+                                    {% if payroll.tax_deductions > 0 %}
+                                    <tr>
+                                        <td>Tax Deductions</td>
+                                        <td class="text-end">{{ "%.2f"|format(payroll.tax_deductions) }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if payroll.unpaid_leave_deduction > 0 %}
+                                    <tr>
+                                        <td>Unpaid Leave Deduction</td>
+                                        <td class="text-end">{{ "%.2f"|format(payroll.unpaid_leave_deduction) }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if payroll.deductions > 0 %}
+                                    <tr>
+                                        <td>Other Deductions</td>
+                                        <td class="text-end">{{ "%.2f"|format(payroll.deductions) }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr class="table-danger">
+                                        <td><strong>Total Deductions</strong></td>
+                                        <td class="text-end"><strong>{{ "%.2f"|format(payroll.total_deductions) }}</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <!-- Attendance Summary -->
+                            <div class="card bg-light mt-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">Attendance Summary</h6>
+                                    <table class="table table-sm table-borderless mb-0">
+                                        <tr>
+                                            <td>Total Working Days:</td>
+                                            <td class="text-end"><strong>{{ payroll.total_working_days }}</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Days Present:</td>
+                                            <td class="text-end"><strong>{{ payroll.days_present }}</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Paid Leave Days:</td>
+                                            <td class="text-end"><strong>{{ payroll.paid_leave_days }}</strong></td>
+                                        </tr>
+                                        {% if payroll.unpaid_leave_days > 0 %}
+                                        <tr class="text-danger">
+                                            <td>Unpaid Leave Days:</td>
+                                            <td class="text-end"><strong>{{ payroll.unpaid_leave_days }}</strong></td>
+                                        </tr>
+                                        {% endif %}
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Net Salary -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="alert alert-success mb-0">
+                                <div class="row align-items-center">
+                                    <div class="col-md-6">
+                                        <h4 class="mb-0">
+                                            <i class="fas fa-wallet me-2"></i>Net Salary (Take Home)
+                                        </h4>
+                                    </div>
+                                    <div class="col-md-6 text-end">
+                                        <h3 class="mb-0">
+                                            <strong>₹{{ "%.2f"|format(payroll.net_pay) }}</strong>
+                                        </h3>
+                                        <small class="text-muted">({{ payroll.payment_status|title }})</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <p class="text-muted text-center mb-0" style="font-size: 0.85rem;">
+                                <em>This is a computer-generated payslip and does not require a signature.</em>
+                            </p>
+                            <p class="text-muted text-center mb-0" style="font-size: 0.85rem;">
+                                Generated on: {{ payroll.created_at.strftime('%d %b %Y at %I:%M %p') }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .btn, .navbar, .sidebar {
+        display: none !important;
+    }
+    
+    .container {
+        max-width: 100%;
+    }
+    
+    .card {
+        border: none;
+        box-shadow: none;
+    }
+}
+</style>
+{% endblock %}

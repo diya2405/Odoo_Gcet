@@ -109,6 +109,7 @@
                                 <th>End Date</th>
                                 <th>Days</th>
                                 <th>Status</th>
+                                <th>Medical Cert</th>
                                 <th>Applied On</th>
                                 <th>Actions</th>
                             </tr>
@@ -125,7 +126,10 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge bg-info">
+                                    <span class="badge 
+                                        {% if leave_request.leave_type == 'sick' %}bg-warning
+                                        {% elif leave_request.leave_type == 'unpaid' %}bg-secondary
+                                        {% else %}bg-info{% endif %}">
                                         {{ leave_request.leave_type|title }}
                                     </span>
                                 </td>
@@ -139,6 +143,18 @@
                                         <span class="badge bg-success">Approved</span>
                                     {% elif leave_request.status == 'rejected' %}
                                         <span class="badge bg-danger">Rejected</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if leave_request.certificate_path %}
+                                        <a href="{{ url_for('admin.download_medical_certificate', leave_request_id=leave_request.id) }}" 
+                                           class="btn btn-sm btn-outline-success" 
+                                           target="_blank"
+                                           title="View Medical Certificate">
+                                            <i class="fas fa-file-pdf"></i> View
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
                                 <td>{{ leave_request.created_at.strftime('%Y-%m-%d') }}</td>
@@ -252,6 +268,20 @@ function viewRequest(requestId) {
     fetch(`/admin/leave_request/${requestId}`)
         .then(response => response.json())
         .then(data => {
+            let certificateHtml = '';
+            if (data.certificate_path) {
+                certificateHtml = `
+                    <div class="col-12 mt-3">
+                        <h6>Medical Certificate</h6>
+                        <a href="/admin/download_medical_certificate/${requestId}" 
+                           class="btn btn-success" 
+                           target="_blank">
+                            <i class="fas fa-file-pdf me-2"></i>View Medical Certificate
+                        </a>
+                    </div>
+                `;
+            }
+            
             let html = `
                 <div class="row">
                     <div class="col-md-6">
@@ -262,7 +292,7 @@ function viewRequest(requestId) {
                     </div>
                     <div class="col-md-6">
                         <h6>Leave Information</h6>
-                        <p><strong>Leave Type:</strong> ${data.leave_type}</p>
+                        <p><strong>Leave Type:</strong> <span class="badge ${data.leave_type == 'sick' ? 'bg-warning' : data.leave_type == 'unpaid' ? 'bg-secondary' : 'bg-info'}">${data.leave_type}</span></p>
                         <p><strong>Start Date:</strong> ${data.start_date}</p>
                         <p><strong>End Date:</strong> ${data.end_date}</p>
                         <p><strong>Days Requested:</strong> ${data.days_requested}</p>
@@ -274,6 +304,7 @@ function viewRequest(requestId) {
                         <h6>Reason</h6>
                         <p>${data.reason || 'No reason provided'}</p>
                     </div>
+                    ${certificateHtml}
                 </div>
             `;
             
@@ -306,12 +337,21 @@ function updateStatus(requestId, newStatus) {
                 request_id: requestId,
                 status: newStatus
             })
-        }).then(response => {
+        })
+        .then(response => {
             if (response.ok) {
-                location.reload();
+                return response.json();
             } else {
-                alert(`Error ${newStatus}ing leave request`);
+                throw new Error(`Failed to ${newStatus} leave request`);
             }
+        })
+        .then(data => {
+            alert(`Leave request ${newStatus} successfully!`);
+            location.reload();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(`Error ${newStatus}ing leave request: ${error.message}`);
         });
     }
 }

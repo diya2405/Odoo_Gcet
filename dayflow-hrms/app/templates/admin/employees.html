@@ -80,9 +80,10 @@
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     {% if employee.profile_picture %}
-                                                        <img src="{{ url_for('static', filename='uploads/' + employee.profile_picture) }}" 
+                                                        <img src="{{ url_for('employee.serve_upload', filename='profiles/' + employee.profile_picture) }}" 
                                                              class="rounded-circle me-2" 
                                                              width="40" height="40" 
+                                                             style="object-fit: cover;"
                                                              alt="Profile">
                                                     {% else %}
                                                         <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2" 
@@ -105,9 +106,14 @@
                                             <td>{{ employee.position or 'Not assigned' }}</td>
                                             <td>{{ employee.user.email }}</td>
                                             <td>
-                                                <span class="badge bg-{{ 'success' if employee.user.is_verified else 'warning' }}">
-                                                    {{ 'Active' if employee.user.is_verified else 'Pending' }}
-                                                </span>
+                                                {% if employee.user.is_active %}
+                                                    <span class="badge bg-success">Active</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Deactivated</span>
+                                                {% endif %}
+                                                {% if not employee.user.is_verified %}
+                                                    <span class="badge bg-warning">Pending Verification</span>
+                                                {% endif %}
                                             </td>
                                             <td>
                                                 <div class="btn-group btn-group-sm">
@@ -121,6 +127,30 @@
                                                        title="Edit">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
+                                                    
+                                                    <!-- Toggle Active/Inactive -->
+                                                    <form method="POST" 
+                                                          action="{{ url_for('admin.toggle_employee_status', employee_id=employee.id) }}" 
+                                                          style="display: inline;"
+                                                          onsubmit="return confirm('Are you sure you want to {{ 'deactivate' if employee.user.is_active else 'activate' }} this user?');">
+                                                        <button type="submit" 
+                                                                class="btn btn-outline-{{ 'warning' if employee.user.is_active else 'info' }}" 
+                                                                title="{{ 'Deactivate' if employee.user.is_active else 'Activate' }} User">
+                                                            <i class="fas fa-{{ 'ban' if employee.user.is_active else 'check-circle' }}"></i>
+                                                        </button>
+                                                    </form>
+                                                    
+                                                    <!-- Delete User -->
+                                                    <form method="POST" 
+                                                          action="{{ url_for('admin.delete_employee', employee_id=employee.id) }}" 
+                                                          style="display: inline;"
+                                                          onsubmit="return confirm('Are you sure you want to DELETE {{ employee.full_name }}? This action cannot be undone!');">
+                                                        <button type="submit" 
+                                                                class="btn btn-outline-danger" 
+                                                                title="Delete Employee">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             </td>
                                         </tr>
